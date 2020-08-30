@@ -6,6 +6,42 @@ RasPiCamPublisher::RasPiCamPublisher(rclcpp::NodeOptions options)
 
     configure_parameters(*state);
 
+    //declare all parameters
+    declare_parameter("width");
+    declare_parameter("height");
+    declare_parameter("fps");
+    declare_parameter("quality");
+    declare_parameter("image_transport");
+    declare_parameter("enable_imv");
+    declare_parameter("camera_id");
+    declare_parameter("sharpness");
+    declare_parameter("contrast");
+    declare_parameter("brightness");
+    declare_parameter("saturation");
+    declare_parameter("ISO");
+    declare_parameter("videoStabilisation");
+    declare_parameter("exposureCompensation");
+    // declare_parameter("exposureMode");
+    // declare_parameter("flickerAvoidMode");
+    // declare_parameter("exposureMeterMode");
+    // declare_parameter("awbMode");
+    // declare_parameter("imageEffect");
+    declare_parameter("colourEffects_enable");
+    declare_parameter("colourEffects_u");
+    declare_parameter("colourEffects_v");
+    declare_parameter("rotation");
+    declare_parameter("hflip");
+    declare_parameter("vflip");
+    declare_parameter("roi_x");
+    declare_parameter("roi_y");
+    declare_parameter("roi_w");
+    declare_parameter("roi_h");
+    declare_parameter("shutter_speed");
+    declare_parameter("awb_gains_r");
+    declare_parameter("awb_gains_b");
+    declare_parameter("analog_gain");
+    declare_parameter("digital_gain");
+
     // get parameters
     int w, h, f, q;
     get_parameter_or("width", w, 320);

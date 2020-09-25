@@ -71,12 +71,12 @@ RasPiCamPublisher::RasPiCamPublisher(rclcpp::NodeOptions options)
 
     std::string image_transport;
     get_parameter_or<std::string>("image_transport", image_transport, "raw");
-    state->enable_raw_pub = (image_transport=="raw");
+    state->raw_output = (image_transport=="raw");
     get_parameter_or("enable_imv", state->enable_imv_pub, false);
 
     buffer_callback_t cb_raw = nullptr;
     pub_img = nullptr;
-    if(state->enable_raw_pub) {
+    if(state->raw_output) {
         pub_img = create_publisher<sensor_msgs::msg::Image>("image", rclcpp::QoS(1));
         cb_raw = std::bind(&RasPiCamPublisher::onImageRaw, this, std::placeholders::_1, std::placeholders::_2);
         RCLCPP_INFO(get_logger(), "Raw enabled.");

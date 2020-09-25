@@ -59,7 +59,7 @@ typedef struct MMAL_PORT_USERDATA_T {
 //{
    FILE *file_handle;                   /// File handle to write buffer data to.
    RASPIVID_STATE *pstate;              /// pointer to our state in case required in callback
-   int abort;                           /// Set to 1 in callback if an error occurs to attempt to abort the capture
+   bool abort;                           /// Set to 1 in callback if an error occurs to attempt to abort the capture
    char *cb_buff;                       /// Circular buffer
    int   cb_len;                        /// Length of buffer
    int   cb_wptr;                       /// Current write pointer
@@ -111,15 +111,15 @@ struct RASPIVID_STATE {
   bool isInit;
   //int width;      /// Requested width of image
   //int height;     /// requested height of image
-  int framerate;  /// Requested frame rate (fps)
+  //int framerate;  /// Requested frame rate (fps)
   int quality;
-  bool enable_raw_pub;  // Enable Raw publishing
+  //bool enable_raw_pub;  // Enable Raw publishing
   bool enable_imv_pub;  // Enable publishing of inline motion vectors
 
   //int camera_id = 0;
 
-  RASPIPREVIEW_PARAMETERS preview_parameters;   /// Preview setup parameters
-  RASPICAM_CAMERA_PARAMETERS camera_parameters;  /// Camera setup parameters
+  // RASPIPREVIEW_PARAMETERS preview_parameters;   /// Preview setup parameters
+  // RASPICAM_CAMERA_PARAMETERS camera_parameters;  /// Camera setup parameters
 
 
 //  mmal::component_ptr camera_component;
@@ -143,7 +143,7 @@ struct RASPIVID_STATE {
    int timeout;                        /// Time taken before frame is grabbed and app then shuts down. Units are milliseconds
    MMAL_FOURCC_T encoding;             /// Requested codec video encoding (MJPEG or H264)
    int bitrate;                        /// Requested bitrate
-//   int framerate;                      /// Requested frame rate (fps)
+   int framerate;                      /// Requested frame rate (fps)
    int intraperiod;                    /// Intra-refresh period (key frame rate)
    int quantisationParameter;          /// Quantisation parameter - quality. Set bitrate 0 and set this for variable bitrate
    int bInlineHeaders;                  /// Insert inline headers to stream (SPS, PPS)
@@ -164,8 +164,8 @@ struct RASPIVID_STATE {
    int splitNow;                       /// Split at next possible i-frame if set to 1.
    int splitWait;                      /// Switch if user wants splited files
 
-//   RASPIPREVIEW_PARAMETERS preview_parameters;   /// Preview setup parameters
-//   RASPICAM_CAMERA_PARAMETERS camera_parameters; /// Camera setup parameters
+   RASPIPREVIEW_PARAMETERS preview_parameters;   /// Preview setup parameters
+   RASPICAM_CAMERA_PARAMETERS camera_parameters; /// Camera setup parameters
 
    MMAL_COMPONENT_T *camera_component;    /// Pointer to the camera component
    MMAL_COMPONENT_T *splitter_component;  /// Pointer to the splitter component
@@ -184,7 +184,7 @@ struct RASPIVID_STATE {
 
    int inlineMotionVectors;             /// Encoder outputs inline Motion Vectors
    char *imv_filename;                  /// filename of inline Motion Vectors output
-   int raw_output;                      /// Output raw video from camera as well
+   bool raw_output;                      /// Output raw video from camera as well
    RAW_OUTPUT_FMT raw_output_fmt;       /// The raw video format
    char *raw_filename;                  /// Filename for raw video output
    int intra_refresh_type;              /// What intra refresh type to use. -1 to not set.
@@ -245,7 +245,7 @@ static MMAL_STATUS_T create_image_encoder_component(RASPIVID_STATE& state);
  * @return MMAL_SUCCESS if all OK, something else otherwise
  *
  */
-static MMAL_STATUS_T create_video_encoder_component(RASPIVID_STATE& state);
+//static MMAL_STATUS_T create_video_encoder_component(RASPIVID_STATE& state);
 
 /**
  * Create the splitter component, set up its ports
@@ -255,7 +255,7 @@ static MMAL_STATUS_T create_video_encoder_component(RASPIVID_STATE& state);
  * @return MMAL_SUCCESS if all OK, something else otherwise
  *
  */
-static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE& state);
+//static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE& state);
 
 /**
  * Connect two specific ports together

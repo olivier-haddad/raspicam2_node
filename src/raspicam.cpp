@@ -303,325 +303,6 @@ static void video_encoder_buffer_callback(MMAL_PORT_T* port, MMAL_BUFFER_HEADER_
 //   }
 // }
 
-/**
- * Create the camera component, set up its ports
- *
- * @param state Pointer to state control struct
- *
- * @return 0 if failed, pointer to component if successful
- *
- */
-static MMAL_COMPONENT_T* create_camera_component(RASPIVID_STATE& state) {
-//   MMAL_COMPONENT_T* camera = 0;
-//   MMAL_ES_FORMAT_T* format;
-//   MMAL_PORT_T *video_port = nullptr, *preview_port = nullptr, *still_port = nullptr;
-//   MMAL_STATUS_T status;
-
-//   /* Create the component */
-//   status = mmal_component_create(MMAL_COMPONENT_DEFAULT_CAMERA, &camera);
-
-//   if (status != MMAL_SUCCESS) {
-//     vcos_log_error("Failed to create camera component");
-//     ROS_ERROR("Failed to create camera component");
-//     goto error;
-//   }
-
-//   // Select the camera to use
-//   {
-//     MMAL_PARAMETER_INT32_T camera_num;
-//     camera_num.hdr.id = MMAL_PARAMETER_CAMERA_NUM;
-//     camera_num.hdr.size = sizeof(camera_num);
-//     camera_num.value = state.camera_id;
-
-//     status = mmal_port_parameter_set(camera->control, &camera_num.hdr);
-//     if (status != MMAL_SUCCESS) {
-//       ROS_ERROR("Could not select camera : error %d", status);
-//       goto error;
-//     }
-//     std::cout << "Camera selected: " << camera_num.value << std::endl;
-//   }
-
-//   if (!camera->output_num) {
-//     status = MMAL_ENOSYS;
-//     vcos_log_error("Camera doesn't have output ports");
-//     ROS_ERROR("Camera doesn't have output ports");
-//     goto error;
-//   }
-
-//    status = mmal_port_parameter_set_uint32(camera->control, MMAL_PARAMETER_CAMERA_CUSTOM_SENSOR_CONFIG, state.common_settings.sensor_mode);
-//    if (status != MMAL_SUCCESS)
-//    {
-//       vcos_log_error("Could not set sensor mode : error %d", status);
-//       goto error;
-//    }
-
-//   preview_port = camera->output[mmal::camera_port::preview];
-//   video_port = camera->output[mmal::camera_port::video];
-//   still_port = camera->output[mmal::camera_port::capture];
-
-//   //  set up the camera configuration
-//   {
-//     MMAL_PARAMETER_CAMERA_CONFIG_T cam_config;
-//     cam_config.hdr.id = MMAL_PARAMETER_CAMERA_CONFIG;
-//     cam_config.hdr.size = sizeof(cam_config);
-//     cam_config.max_stills_w = state.width;
-//     cam_config.max_stills_h = state.height;
-//     cam_config.stills_yuv422 = 0;
-//     cam_config.one_shot_stills = 0;
-//     cam_config.max_preview_video_w = state.width;
-//     cam_config.max_preview_video_h = state.height;
-//     cam_config.num_preview_video_frames = 3 + vcos_max(0, (state.framerate-30)/10);
-//     cam_config.stills_capture_circular_buffer_height = 0;
-//     cam_config.fast_preview_resume = 0;
-//     cam_config.use_stc_timestamp = MMAL_PARAM_TIMESTAMP_MODE_RESET_STC;
-
-//     mmal_port_parameter_set(camera->control, &cam_config.hdr);
-//   }
-
-//   // Now set up the port formats
-
-//   // Set the encode format on the preview  port
-//   // HW limitations mean we need the preview to be the same size as the required recorded output
-
-//   format = preview_port->format;
-//   //set later : format->encoding = MMAL_ENCODING_I420;
-//   format->encoding_variant = MMAL_ENCODING_I420;
-
-//   //  if(state.camera_parameters.shutter_speed > 6000000)
-//   //  {
-//   //     MMAL_PARAMETER_FPS_RANGE_T fps_range = {{MMAL_PARAMETER_FPS_RANGE, sizeof(fps_range)},
-//   //        { 5, 1000 }, {166, 1000}
-//   //     };
-//   //     mmal_port_parameter_set(preview_port, &fps_range.hdr);
-//   //  }
-//   //  else if(state.camera_parameters.shutter_speed > 1000000)
-//   //  {
-//   //     MMAL_PARAMETER_FPS_RANGE_T fps_range = {{MMAL_PARAMETER_FPS_RANGE, sizeof(fps_range)},
-//   //        { 166, 1000 }, {999, 1000}
-//   //     };
-//   //     mmal_port_parameter_set(preview_port, &fps_range.hdr);
-//   //  }
-
-//   //  //enable dynamic framerate if necessary
-//   //  if (state.camera_parameters.shutter_speed)
-//   //  {
-//   //     if (state.framerate > 1000000./state.camera_parameters.shutter_speed)
-//   //     {
-//   //        state.framerate=0;
-//   //        if (state.common_settings.verbose)
-//   //           fprintf(stderr, "Enable dynamic frame rate to fulfil shutter speed requirement\n");
-//   //     }
-//   //  }
-
-//   format->encoding = MMAL_ENCODING_I420;
-//   format->es->video.width = VCOS_ALIGN_UP(state.common_settings.width, 32);
-//   format->es->video.height = VCOS_ALIGN_UP(state.common_settings.height, 16);
-//   format->es->video.crop.x = 0;
-//   format->es->video.crop.y = 0;
-//   format->es->video.crop.width = state.common_settings.width;
-//   format->es->video.crop.height = state.common_settings.height;
-//   format->es->video.frame_rate.num = state.framerate;
-//   format->es->video.frame_rate.den = VIDEO_FRAME_RATE_DEN;
-
-//   status = mmal_port_format_commit(preview_port);
-
-//   if (status) {
-//     vcos_log_error("camera preview format couldn't be set");
-//     ROS_ERROR("camera preview format couldn't be set");
-//     goto error;
-//   }
-
-//   // Ensure there are enough buffers to avoid dropping frames
-//   if (preview_port->buffer_num < VIDEO_OUTPUT_BUFFERS_NUM)
-//     preview_port->buffer_num = VIDEO_OUTPUT_BUFFERS_NUM;
-
-
-//   // Set the encode format on the video  port
-
-//   format = video_port->format;
-//   format->encoding_variant = MMAL_ENCODING_I420;
-
-//   //  if(state.camera_parameters.shutter_speed > 6000000)
-//   //  {
-//   //     MMAL_PARAMETER_FPS_RANGE_T fps_range = {{MMAL_PARAMETER_FPS_RANGE, sizeof(fps_range)},
-//   //        { 5, 1000 }, {166, 1000}
-//   //     };
-//   //     mmal_port_parameter_set(video_port, &fps_range.hdr);
-//   //  }
-//   //  else if(state.camera_parameters.shutter_speed > 1000000)
-//   //  {
-//   //     MMAL_PARAMETER_FPS_RANGE_T fps_range = {{MMAL_PARAMETER_FPS_RANGE, sizeof(fps_range)},
-//   //        { 167, 1000 }, {999, 1000}
-//   //     };
-//   //     mmal_port_parameter_set(video_port, &fps_range.hdr);
-//   //  }
-
-//   format->encoding = MMAL_ENCODING_I420;
-//   format->es->video.width = VCOS_ALIGN_UP(state.common_settings.width, 32);
-//   format->es->video.height = VCOS_ALIGN_UP(state.common_settings.height, 16);
-//   format->es->video.crop.x = 0;
-//   format->es->video.crop.y = 0;
-//   format->es->video.crop.width = state.common_settings.width;
-//   format->es->video.crop.height = state.common_settings.height;
-//   format->es->video.frame_rate.num = state.framerate;
-//   format->es->video.frame_rate.den = VIDEO_FRAME_RATE_DEN;
-
-//   status = mmal_port_format_commit(video_port);
-
-//   if (status) {
-//     vcos_log_error("camera video format couldn't be set");
-//     ROS_ERROR("camera video format couldn't be set");
-//     goto error;
-//   }
-
-//   video_port->buffer_num = video_port->buffer_num_recommended;
-//   // Ensure there are enough buffers to avoid dropping frames
-//   if (video_port->buffer_num < VIDEO_OUTPUT_BUFFERS_NUM)
-//     video_port->buffer_num = VIDEO_OUTPUT_BUFFERS_NUM;
-
-//   // Set the encode format on the still  port
-
-//   format = still_port->format;
-
-//   format->encoding = MMAL_ENCODING_OPAQUE;
-//   format->encoding_variant = MMAL_ENCODING_I420;
-
-//   format->es->video.width = VCOS_ALIGN_UP(state.common_settings.width, 32);
-//   format->es->video.height = VCOS_ALIGN_UP(state.common_settings.height, 16);
-//   format->es->video.crop.x = 0;
-//   format->es->video.crop.y = 0;
-//   format->es->video.crop.width = state.common_settings.width;
-//   format->es->video.crop.height = state.common_settings.height;
-//   format->es->video.frame_rate.num = 1;
-//   format->es->video.frame_rate.den = 1;
-
-//   status = mmal_port_format_commit(still_port);
-
-//   if (status) {
-//     vcos_log_error("camera still format couldn't be set");
-//     ROS_ERROR("camera still format couldn't be set");
-//     goto error;
-//   }
-
-//   /* Ensure there are enough buffers to avoid dropping frames */
-//   if (still_port->buffer_num < VIDEO_OUTPUT_BUFFERS_NUM)
-//     still_port->buffer_num = VIDEO_OUTPUT_BUFFERS_NUM;
-
-//   /* Enable component */
-//   ROS_DEBUG("rignt before emable\n");
-//   status = mmal_component_enable(camera);
-
-//   if (status) {
-//     vcos_log_error("camera component couldn't be enabled");
-//     ROS_ERROR("camera component couldn't be enabled");
-//     goto error;
-//   }
-
-//   raspicamcontrol_set_all_parameters(camera, &state.camera_parameters);
-
-//   state.camera_component.reset(camera);
-
-//   ROS_DEBUG("Camera component done\n");
-
-//   return camera;
-
-// error:
-
-//   if (camera)
-//     mmal_component_destroy(camera);
-  return 0;
-}
-
-/**
- * Create the camera component, set up its ports
- *
- * @param state Pointer to state control struct
- *
- * @return 0 if failed, pointer to component if successful
- *
- */
-static MMAL_STATUS_T create_preview_component(RASPIVID_STATE& state) {
-   MMAL_COMPONENT_T *preview = 0;
-   MMAL_PORT_T *preview_port = nullptr;
-   MMAL_STATUS_T status;
-
-   {
-      status = mmal_component_create(MMAL_COMPONENT_DEFAULT_VIDEO_RENDERER, &preview);
-
-      if (status != MMAL_SUCCESS)
-      {
-         vcos_log_error("Unable to create preview component");
-         ROS_ERROR("Unable to create preview component");
-         goto error;
-      }
-
-      if (!preview->input_num)
-      {
-         status = MMAL_ENOSYS;
-         vcos_log_error("No input ports found on component");
-         goto error;
-      }
-
-      preview_port = preview->input[0];
-
-      MMAL_DISPLAYREGION_T param;
-      param.hdr.id = MMAL_PARAMETER_DISPLAYREGION;
-      param.hdr.size = sizeof(MMAL_DISPLAYREGION_T);
-
-      param.set = MMAL_DISPLAY_SET_LAYER;
-      param.layer = PREVIEW_LAYER;
-
-      param.set |= MMAL_DISPLAY_SET_ALPHA;
-      param.alpha = 255;
-
-      // if (state.wantFullScreenPreview)
-      // {
-         param.set |= MMAL_DISPLAY_SET_FULLSCREEN;
-         param.fullscreen = 1;
-      // }
-      // else
-      // {
-      //    param.set |= (MMAL_DISPLAY_SET_DEST_RECT | MMAL_DISPLAY_SET_FULLSCREEN);
-      //    param.fullscreen = 0;
-      //    param.dest_rect = state.previewWindow;
-      // }
-
-      // if (state.display_num >= 0)
-      // {
-      //    param.set |= MMAL_DISPLAY_SET_NUM;
-      //    param.display_num = state.display_num;
-      // }
-
-      status = mmal_port_parameter_set(preview_port, &param.hdr);
-
-      if (status != MMAL_SUCCESS && status != MMAL_ENOSYS)
-      {
-         vcos_log_error("unable to set preview port parameters (%u)", status);
-         goto error;
-      }
-   }
-
-   /* Enable component */
-   status = mmal_component_enable(preview);
-
-   if (status != MMAL_SUCCESS)
-   {
-      vcos_log_error("Unable to enable preview/null sink component (%u)", status);
-      goto error;
-   }
-
-   state.preview_component.reset(preview);
-    ROS_DEBUG("Preview component created.\n");
-
-   return status;
-
-error:
-
-   if (preview)
-      mmal_component_destroy(preview);
-
-   return status;
-}
 
 /**
  * Create the image encoder component, set up its ports
@@ -743,7 +424,7 @@ static MMAL_STATUS_T create_video_encoder_component(RASPIVID_STATE& state) {
 
   if (status != MMAL_SUCCESS) {
     vcos_log_error("Unable to create video encoder component");
-    ROS_ERROR("Unable to create video encoder component");
+    ROS_ERROR("Unable to create video encoder component\n");
     goto error;
   }
 
@@ -2820,45 +2501,52 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
 {
    MMAL_COMPONENT_T *camera = 0;
    MMAL_ES_FORMAT_T *format;
-   MMAL_PORT_T *preview_port = NULL, *video_port = NULL, *still_port = NULL;
+   MMAL_PORT_T *video_port = nullptr, *preview_port = nullptr, *still_port = nullptr;
    MMAL_STATUS_T status;
 
    /* Create the component */
    status = mmal_component_create(MMAL_COMPONENT_DEFAULT_CAMERA, &camera);
 
-   MMAL_PARAMETER_INT32_T camera_num =
-   {{MMAL_PARAMETER_CAMERA_NUM, sizeof(camera_num)}, state->common_settings.cameraNum};
-   int tempStatus = 0;
-
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("Failed to create camera component");
+      ROS_ERROR("Failed to create camera component\n");
       goto error;
    }
 
-   tempStatus =  raspicamcontrol_set_stereo_mode(camera->output[0], &state->camera_parameters.stereo_mode);
-   tempStatus += raspicamcontrol_set_stereo_mode(camera->output[1], &state->camera_parameters.stereo_mode);
-   tempStatus += raspicamcontrol_set_stereo_mode(camera->output[2], &state->camera_parameters.stereo_mode);
-  status = (MMAL_STATUS_T)tempStatus;
-
-   if (status != MMAL_SUCCESS)
    {
-      vcos_log_error("Could not set stereo mode : error %d", status);
-      goto error;
+      int tempStatus = 0;
+      tempStatus =  raspicamcontrol_set_stereo_mode(camera->output[0], &state->camera_parameters.stereo_mode);
+      tempStatus += raspicamcontrol_set_stereo_mode(camera->output[1], &state->camera_parameters.stereo_mode);
+      tempStatus += raspicamcontrol_set_stereo_mode(camera->output[2], &state->camera_parameters.stereo_mode);
+      status = (MMAL_STATUS_T)tempStatus;
+
+      if (status != MMAL_SUCCESS)
+      {
+         vcos_log_error("Could not set stereo mode : error %d", status);
+         goto error;
+      }
    }
 
-   status = mmal_port_parameter_set(camera->control, &camera_num.hdr);
-
-   if (status != MMAL_SUCCESS)
    {
-      vcos_log_error("Could not select camera : error %d", status);
-      goto error;
+      MMAL_PARAMETER_INT32_T camera_num =
+      {{MMAL_PARAMETER_CAMERA_NUM, sizeof(camera_num)}, state->common_settings.cameraNum};
+
+      status = mmal_port_parameter_set(camera->control, &camera_num.hdr);
+
+      if (status != MMAL_SUCCESS)
+      {
+         vcos_log_error("Could not select camera : error %d", status);
+         ROS_ERROR("Could not select camera : error %d", status);
+         goto error;
+      }
    }
 
    if (!camera->output_num)
    {
       status = MMAL_ENOSYS;
       vcos_log_error("Camera doesn't have output ports");
+      ROS_ERROR("Camera doesn't have output ports");
       goto error;
    }
 
@@ -2897,7 +2585,8 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
          .num_preview_video_frames = 3 + vcos_max(0, (state->framerate-30)/10),
          .stills_capture_circular_buffer_height = 0,
          .fast_preview_resume = 0,
-         .use_stc_timestamp = MMAL_PARAM_TIMESTAMP_MODE_RAW_STC
+         //.use_stc_timestamp = MMAL_PARAM_TIMESTAMP_MODE_RAW_STC //MMAL_PARAM_TIMESTAMP_MODE_RESET_STC
+         .use_stc_timestamp = MMAL_PARAM_TIMESTAMP_MODE_RESET_STC
       };
       mmal_port_parameter_set(camera->control, &cam_config.hdr);
    }
@@ -2939,6 +2628,7 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
    }
 
    format->encoding = MMAL_ENCODING_OPAQUE;
+//   format->encoding = MMAL_ENCODING_I420;
    format->es->video.width = VCOS_ALIGN_UP(state->common_settings.width, 32);
    format->es->video.height = VCOS_ALIGN_UP(state->common_settings.height, 16);
    format->es->video.crop.x = 0;
@@ -2953,6 +2643,7 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("camera viewfinder format couldn't be set");
+      ROS_ERROR("camera preview format couldn't be set\n");
       goto error;
    }
 
@@ -2977,6 +2668,7 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
    }
 
    format->encoding = MMAL_ENCODING_OPAQUE;
+//   format->encoding = MMAL_ENCODING_I420;
    format->es->video.width = VCOS_ALIGN_UP(state->common_settings.width, 32);
    format->es->video.height = VCOS_ALIGN_UP(state->common_settings.height, 16);
    format->es->video.crop.x = 0;
@@ -2991,6 +2683,7 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("camera video format couldn't be set");
+      ROS_ERROR("camera video format couldn't be set\n");
       goto error;
    }
 
@@ -3020,6 +2713,7 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("camera still format couldn't be set");
+      ROS_ERROR("camera still format couldn't be set\n");
       goto error;
    }
 
@@ -3033,6 +2727,7 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("camera component couldn't be enabled");
+      ROS_ERROR("camera component couldn't be enabled\n");
       goto error;
    }
 
@@ -3234,6 +2929,7 @@ static void destroy_splitter_component(RASPIVID_STATE *state)
  * @return MMAL_SUCCESS if all OK, something else otherwise
  *
  */
+//equivalent to create_video_encoder_component
 static MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
 {
    MMAL_COMPONENT_T *encoder = 0;
@@ -3246,6 +2942,7 @@ static MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("Unable to create video encoder component");
+    ROS_ERROR("Unable to create video encoder component\n");
       goto error;
    }
 
@@ -3253,6 +2950,7 @@ static MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
    {
       status = MMAL_ENOSYS;
       vcos_log_error("Video encoder doesn't have input/output ports");
+      ROS_ERROR("Video encoder doesn't have input/output ports\n");
       goto error;
    }
 
@@ -3320,6 +3018,7 @@ static MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("Unable to set format on video encoder output port");
+      ROS_ERROR("Unable to set format on video encoder output port\n");
       goto error;
    }
 
@@ -3495,6 +3194,7 @@ static MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("Unable to enable video encoder component");
+      ROS_ERROR("Unable to enable video encoder component\n");
       goto error;
    }
 
@@ -3504,6 +3204,7 @@ static MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
    if (!pool)
    {
       vcos_log_error("Failed to create buffer header pool for encoder output port %s", encoder_output->name);
+      ROS_ERROR("Failed to create buffer header pool for video encoder output port %s\n", encoder_output->name);
    }
 
    state->encoder_pool = pool;
@@ -3775,6 +3476,7 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
    if ((status = create_camera_component(&state)) != MMAL_SUCCESS)
    {
       vcos_log_error("%s: Failed to create camera component", __func__);
+      ROS_ERROR("%s: Failed to create camera component\n", __func__);
       exit_code = EX_SOFTWARE;
    }
    else if ((status = raspipreview_create(&state.preview_parameters)) != MMAL_SUCCESS)

@@ -94,9 +94,9 @@ struct RASPIVID_STATE {
   RASPIVID_STATE()
     :
      //camera_component(nullptr),
-     preview_component(nullptr)
+     //preview_component(nullptr)
     //, splitter_component(nullptr)
-    , image_encoder_component(nullptr)
+    image_encoder_component(nullptr)
     , video_encoder_component(nullptr)
     //, splitter_connection(nullptr)
     , image_encoder_connection(nullptr)
@@ -123,7 +123,7 @@ struct RASPIVID_STATE {
 
 
 //  mmal::component_ptr camera_component;
-  mmal::component_ptr preview_component;
+  //mmal::component_ptr preview_component;
   //mmal::component_ptr splitter_component;
   mmal::component_ptr image_encoder_component;
   mmal::component_ptr video_encoder_component;
@@ -226,26 +226,6 @@ static void image_encoder_buffer_callback(MMAL_PORT_T* port, MMAL_BUFFER_HEADER_
 static void video_encoder_buffer_callback(MMAL_PORT_T* port, MMAL_BUFFER_HEADER_T* buffer);
 
 static void splitter_buffer_callback(MMAL_PORT_T* port, MMAL_BUFFER_HEADER_T* buffer);
-
-/**
- * Create the camera component, set up its ports
- *
- * @param state Pointer to state control struct
- *
- * @return 0 if failed, pointer to component if successful
- *
- */
-static MMAL_COMPONENT_T* create_camera_component(RASPIVID_STATE& state);
-
-/**
- * Create the preview component, set up its ports
- *
- * @param state Pointer to state control struct
- *
- * @return 0 if failed, pointer to component if successful
- *
- */
-static MMAL_STATUS_T create_preview_component(RASPIVID_STATE& state);
 
 /**
  * Create the image encoder component, set up its ports

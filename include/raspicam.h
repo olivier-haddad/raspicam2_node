@@ -109,14 +109,14 @@ struct RASPIVID_STATE {
 
 //   RASPICOMMONSETTINGS_PARAMETERS common_settings;     /// Common settings
   bool isInit;
-  int width;      /// Requested width of image
-  int height;     /// requested height of image
+  //int width;      /// Requested width of image
+  //int height;     /// requested height of image
   int framerate;  /// Requested frame rate (fps)
   int quality;
   bool enable_raw_pub;  // Enable Raw publishing
   bool enable_imv_pub;  // Enable publishing of inline motion vectors
 
-  int camera_id = 0;
+  //int camera_id = 0;
 
   RASPIPREVIEW_PARAMETERS preview_parameters;   /// Preview setup parameters
   RASPICAM_CAMERA_PARAMETERS camera_parameters;  /// Camera setup parameters
@@ -203,7 +203,7 @@ struct RASPIVID_STATE {
  *
  * @param state state structure to assign defaults to
  */
-void configure_parameters(RASPIVID_STATE& state);
+void default_status(RASPIVID_STATE *state);
 
 /**
  *  buffer header callback function for image encoder

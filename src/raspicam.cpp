@@ -58,39 +58,21 @@ static constexpr int VIDEO_FRAME_RATE_DEN = 1;
 // Video render needs at least 2 buffers.
 static constexpr int VIDEO_OUTPUT_BUFFERS_NUM = 3;
 
-/** Struct used to pass information in encoder port userdata to callback
- */
-//OH test raspivid
-// typedef struct MMAL_PORT_USERDATA_T {
-//   MMAL_PORT_USERDATA_T(const RASPIVID_STATE& state) : pstate(state){};
-//   std::unique_ptr<uint8_t[]> buffer[2];  // Memory to write buffer data to.
-//   const RASPIVID_STATE& pstate;          // pointer to our state for use by callback
-//   bool abort;                            // Set to 1 in callback if an error occurs to attempt to abort
-//                                          // the capture
-//   int frame;
-//   int id;
-
-//   int frames_skipped = 0;
-
-//   buffer_callback_t callback = nullptr;
-// } PORT_USERDATA;
-
-
 int skip_frames = 0;
 
-/**
- * Assign a default set of parameters to the state passed in
- *
- * @param state state structure to assign defaults to
- */
-void configure_parameters(RASPIVID_STATE& state) {
-  // Set up the camera_parameters to default
-  raspicamcontrol_set_defaults(&state.camera_parameters);
-  raspicommonsettings_set_defaults(&state.common_settings);
-  raspipreview_set_defaults(&state.preview_parameters);
+// /**
+//  * Assign a default set of parameters to the state passed in
+//  *
+//  * @param state state structure to assign defaults to
+//  */
+// void configure_parameters(RASPIVID_STATE& state) {
+//   // Set up the camera_parameters to default
+//   raspicamcontrol_set_defaults(&state.camera_parameters);
+//   raspicommonsettings_set_defaults(&state.common_settings);
+//   raspipreview_set_defaults(&state.preview_parameters);
 
-  state.isInit = false;
-}
+//   state.isInit = false;
+// }
 
 /**
  *  buffer header callback function for image encoder
@@ -1044,7 +1026,7 @@ static MMAL_STATUS_T connect_ports(MMAL_PORT_T* output_port, MMAL_PORT_T* input_
 
  */
 // //OH test raspivid
-// int init_cam(RASPIVID_STATE& stateOLD, buffer_callback_t cb_raw, buffer_callback_t cb_compressed, buffer_callback_t cb_motion) {
+// int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t cb_compressed, buffer_callback_t cb_motion) {
 //   MMAL_STATUS_T status;
 //   MMAL_PORT_T* camera_video_port = nullptr;
 //   MMAL_PORT_T* camera_preview_port = nullptr;
@@ -1061,8 +1043,6 @@ static MMAL_STATUS_T connect_ports(MMAL_PORT_T* output_port, MMAL_PORT_T* input_
 //   // Register our application with the logging system
 //   vcos_log_register("RaspiVid", VCOS_LOG_CATEGORY);
 
-//   RASPIVID_STATE state;
-//   configure_parameters(state);
 //   state.common_settings.width = 1920;
 //   state.common_settings.height = 1080;
 //   std::cout << "Before get defaults for camera: " << state.common_settings.cameraNum << std::endl;
@@ -1205,7 +1185,7 @@ int start_capture(RASPIVID_STATE& state) {
   MMAL_PORT_T* image_encoder_output_port = state.image_encoder_component->output[0];
   MMAL_PORT_T* video_encoder_output_port = state.video_encoder_component->output[0];
   MMAL_PORT_T* splitter_output_raw = state.splitter_component->output[1];
-  ROS_INFO("Starting video capture (%d, %d, %d, %d)\n", state.width, state.height, state.quality, state.framerate);
+  ROS_INFO("Starting video capture (%d, %d, %d, %d)\n", state.common_settings.width, state.common_settings.height, state.quality, state.framerate);
 
   if (mmal_port_parameter_set_boolean(camera_video_port, MMAL_PARAMETER_CAPTURE, 1) != MMAL_SUCCESS) {
     ROS_FATAL("Could not start video port capture.");
@@ -1699,7 +1679,7 @@ static int wait_method_description_size = sizeof(wait_method_description) / size
  *
  * @param state Pointer to state structure to assign defaults to
  */
-static void default_status(RASPIVID_STATE *state)
+void default_status(RASPIVID_STATE *state)
 {
    if (!state)
    {
@@ -1710,6 +1690,7 @@ static void default_status(RASPIVID_STATE *state)
    // Default everything to zero
    memset(state, 0, sizeof(RASPIVID_STATE));
 
+   state->isInit=false;
    raspicommonsettings_set_defaults(&state->common_settings);
 
    // Now set anything non-zero
@@ -3720,50 +3701,48 @@ static int wait_for_next_change(RASPIVID_STATE *state)
    return keep_running;
 }
 
-/**
- * main
- */
-//int main(int argc, const char **argv)
-int init_cam(RASPIVID_STATE& stateOLD, buffer_callback_t cb_raw, buffer_callback_t cb_compressed, buffer_callback_t cb_motion)
+int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t cb_compressed, buffer_callback_t cb_motion)
 {
   int argc=2;
   const char *argv[2] = {"raspivid", "-d"};
 
-   // Our main data storage vessel..
-   RASPIVID_STATE state;
    int exit_code = EX_OK;
 
    MMAL_STATUS_T status = MMAL_SUCCESS;
-   MMAL_PORT_T *camera_preview_port = NULL;
-   MMAL_PORT_T *camera_video_port = NULL;
-   MMAL_PORT_T *camera_still_port = NULL;
-   MMAL_PORT_T *preview_input_port = NULL;
-   MMAL_PORT_T *encoder_input_port = NULL;
-   MMAL_PORT_T *encoder_output_port = NULL;
-   MMAL_PORT_T *splitter_input_port = NULL;
-   MMAL_PORT_T *splitter_output_port = NULL;
-   MMAL_PORT_T *splitter_preview_port = NULL;
+   MMAL_PORT_T* camera_preview_port = nullptr;
+   MMAL_PORT_T* camera_video_port = nullptr;
+   MMAL_PORT_T *camera_still_port = nullptr;
+   MMAL_PORT_T* preview_input_port = nullptr;
+   MMAL_PORT_T* splitter_input_port = nullptr;
+
+//   MMAL_PORT_T* splitter_output_enc = nullptr;
+//   MMAL_PORT_T* splitter_output_raw = nullptr;
+//   MMAL_PORT_T* image_encoder_input_port = nullptr;
+//   MMAL_PORT_T* image_encoder_output_port = nullptr;
+   //for motion vectors
+//   MMAL_PORT_T* video_encoder_input_port = nullptr;
+//   MMAL_PORT_T* video_encoder_output_port = nullptr;
+
+   //video encoder
+   MMAL_PORT_T *encoder_input_port = nullptr;
+   MMAL_PORT_T *encoder_output_port = nullptr;
+   MMAL_PORT_T *splitter_output_port = nullptr;
+   MMAL_PORT_T *splitter_preview_port = nullptr;
 
    bcm_host_init();
 
    // Register our application with the logging system
    vcos_log_register("RaspiVid", VCOS_LOG_CATEGORY);
 
-   signal(SIGINT, default_signal_handler);
+//   signal(SIGINT, default_signal_handler);
 
    // Disable USR1 for the moment - may be reenabled if go in to signal capture mode
-   signal(SIGUSR1, SIG_IGN);
+//   signal(SIGUSR1, SIG_IGN);
 
-   set_app_name(argv[0]);
+   set_app_name("Raspicam_node");
 
-   // Do we have any parameters
-   if (argc == 1)
-   {
-      //display_valid_parameters(basename(get_app_name()), &application_help_message);
-      exit(EX_USAGE);
-   }
-
-   default_status(&state);
+   //already called in RasPiCamPublisher
+   //default_status(&state);
 
    // Parse the command line and put options in to our status structure
    if (parse_cmdline(argc, argv, &state))

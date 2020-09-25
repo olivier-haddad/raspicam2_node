@@ -1,10 +1,11 @@
 #include <RasPiCamPublisherNode.hpp>
+//#include <rclcpp/logging.hpp>
 
 RasPiCamPublisher::RasPiCamPublisher(rclcpp::NodeOptions options)
   : Node("raspicam2", "camera", options.use_intra_process_comms(true)) {
     state = std::make_shared<RASPIVID_STATE>();
 
-    configure_parameters(*state);
+    default_status(state.get());
 
     //declare all parameters
     declare_parameter("width");
@@ -44,10 +45,10 @@ RasPiCamPublisher::RasPiCamPublisher(rclcpp::NodeOptions options)
 
     // get parameters
     int w, h, f, q;
-    // get_parameter_or("width", w, 320);
-    // get_parameter_or("height", h, 240);
-    // get_parameter_or("fps", f, 90);
-    // get_parameter_or("quality", q, 80);
+    get_parameter_or("width", w, 320);
+    get_parameter_or("height", h, 240);
+    get_parameter_or("fps", f, 90);
+    get_parameter_or("quality", q, 80);
 
     // set default camera parameters for Camera Module v1
     // https://www.raspberrypi.org/documentation/hardware/camera/
@@ -63,8 +64,8 @@ RasPiCamPublisher::RasPiCamPublisher(rclcpp::NodeOptions options)
                      0,  fy, cy,
                      0,   0, 1};
 
-    state->width = w;
-    state->height = h;
+    state->common_settings.width = w;
+    state->common_settings.height = h;
     state->quality = q;
     state->framerate = f;
 
@@ -78,14 +79,17 @@ RasPiCamPublisher::RasPiCamPublisher(rclcpp::NodeOptions options)
     if(state->enable_raw_pub) {
         pub_img = create_publisher<sensor_msgs::msg::Image>("image", rclcpp::QoS(1));
         cb_raw = std::bind(&RasPiCamPublisher::onImageRaw, this, std::placeholders::_1, std::placeholders::_2);
+        RCLCPP_INFO(get_logger(), "Raw enabled.");
     }
 
     buffer_callback_t cb_motion = nullptr;
     if(state->enable_imv_pub) {
         cb_motion = std::bind(&RasPiCamPublisher::onMotion, this, std::placeholders::_1, std::placeholders::_2);
+        RCLCPP_INFO(get_logger(), "Motion vectors enabled.");
     }
 
-    state->camera_id = state->common_settings.cameraNum;
+    // state->camera_id = state->common_settings.cameraNum;
+    // RCLCPP_INFO(get_logger(), "Camera Id %d, Num: %d", state->common_settings.cameraNum, state->common_settings.cameraNum);
 
     //get_parameter_or("camera_id", state->camera_id, 0);
 
@@ -125,6 +129,7 @@ RasPiCamPublisher::RasPiCamPublisher(rclcpp::NodeOptions options)
         std::bind(&RasPiCamPublisher::set_camera_info, this,
         std::placeholders::_1, std::placeholders::_2));
 
+    state->common_settings.verbose = 0;
     init_cam(*state,
              cb_raw,
              std::bind(&RasPiCamPublisher::onImageCompressed, this, std::placeholders::_1, std::placeholders::_2),

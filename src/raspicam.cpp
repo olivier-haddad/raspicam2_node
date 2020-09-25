@@ -3760,12 +3760,11 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
 
    if (state.common_settings.verbose)
    {
-      print_app_details(stderr);
+      //print_app_details(stderr);
       dump_status(&state);
    }
 
    check_camera_model(state.common_settings.cameraNum);
-
    if (state.common_settings.gps)
 //      if (raspi_gps_setup(state.common_settings.verbose))
          state.common_settings.gps = 0;

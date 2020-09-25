@@ -129,7 +129,7 @@ RasPiCamPublisher::RasPiCamPublisher(rclcpp::NodeOptions options)
         std::bind(&RasPiCamPublisher::set_camera_info, this,
         std::placeholders::_1, std::placeholders::_2));
 
-    state->common_settings.verbose = 0;
+    state->common_settings.verbose = 1;
     init_cam(*state,
              cb_raw,
              std::bind(&RasPiCamPublisher::onImageCompressed, this, std::placeholders::_1, std::placeholders::_2),

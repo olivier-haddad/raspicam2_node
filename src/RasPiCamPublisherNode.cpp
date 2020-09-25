@@ -44,15 +44,10 @@ RasPiCamPublisher::RasPiCamPublisher(rclcpp::NodeOptions options)
 
     // get parameters
     int w, h, f, q;
-    get_parameter_or("width", w, 320);
-    get_parameter_or("height", h, 240);
-    get_parameter_or("fps", f, 90);
-    get_parameter_or("quality", q, 80);
-
-    // std::cout << "width: " << w << std::endl;
-    // std::cout << "height: " << h << std::endl;
-    // std::cout << "fps: " << w << std::endl;
-    // std::cout << "quality: " << q << std::endl;
+    // get_parameter_or("width", w, 320);
+    // get_parameter_or("height", h, 240);
+    // get_parameter_or("fps", f, 90);
+    // get_parameter_or("quality", q, 80);
 
     // set default camera parameters for Camera Module v1
     // https://www.raspberrypi.org/documentation/hardware/camera/
@@ -90,38 +85,39 @@ RasPiCamPublisher::RasPiCamPublisher(rclcpp::NodeOptions options)
         cb_motion = std::bind(&RasPiCamPublisher::onMotion, this, std::placeholders::_1, std::placeholders::_2);
     }
 
+    state->camera_id = state->common_settings.cameraNum;
 
-    get_parameter_or("camera_id", state->camera_id, 0);
+    //get_parameter_or("camera_id", state->camera_id, 0);
 
-    get_parameter_or("sharpness", state->camera_parameters.sharpness, 0);
-    get_parameter_or("contrast", state->camera_parameters.contrast, 0);
-    get_parameter_or("brightness", state->camera_parameters.brightness, 0);
-    get_parameter_or("saturation", state->camera_parameters.saturation, 0);
-    get_parameter_or("ISO", state->camera_parameters.ISO, 0);
-    get_parameter_or("videoStabilisation", state->camera_parameters.videoStabilisation, 0);
-    get_parameter_or("exposureCompensation", state->camera_parameters.exposureCompensation, 0);
-    // get_parameter_or("exposureMode", state->camera_parameters.exposureMode, AUTO);
-    // get_parameter_or("flickerAvoidMode", state->camera_parameters.flickerAvoidMode, OFF);
-    // get_parameter_or("exposureMeterMode", state->camera_parameters.exposureMeterMode, AVERAGE);
-    // get_parameter_or("awbMode", state->camera_parameters.awbMode, AUTO);
-    // get_parameter_or("imageEffect", state->camera_parameters.imageEffect, NONE);
-    get_parameter_or("colourEffects_enable", state->camera_parameters.colourEffects.enable, 0);
-    get_parameter_or("colourEffects_u", state->camera_parameters.colourEffects.u, 128);
-    get_parameter_or("colourEffects_v", state->camera_parameters.colourEffects.v, 128);
-    get_parameter_or("rotation", state->camera_parameters.rotation, 0);
-    get_parameter_or("hflip", state->camera_parameters.hflip, 0);
-    get_parameter_or("vflip", state->camera_parameters.vflip, 0);
-    get_parameter_or("roi_x", state->camera_parameters.roi.x, 0.0);
-    get_parameter_or("roi_y", state->camera_parameters.roi.y, 0.0);
-    get_parameter_or("roi_w", state->camera_parameters.roi.w, 0.0);
-    get_parameter_or("roi_h", state->camera_parameters.roi.h, 1.0);
-    get_parameter_or("shutter_speed", state->camera_parameters.shutter_speed, 0);
+    // get_parameter_or("sharpness", state->camera_parameters.sharpness, 0);
+    // get_parameter_or("contrast", state->camera_parameters.contrast, 0);
+    // get_parameter_or("brightness", state->camera_parameters.brightness, 0);
+    // get_parameter_or("saturation", state->camera_parameters.saturation, 0);
+    // get_parameter_or("ISO", state->camera_parameters.ISO, 0);
+    // get_parameter_or("videoStabilisation", state->camera_parameters.videoStabilisation, 0);
+    // get_parameter_or("exposureCompensation", state->camera_parameters.exposureCompensation, 0);
+    // // get_parameter_or("exposureMode", state->camera_parameters.exposureMode, AUTO);
+    // // get_parameter_or("flickerAvoidMode", state->camera_parameters.flickerAvoidMode, OFF);
+    // // get_parameter_or("exposureMeterMode", state->camera_parameters.exposureMeterMode, AVERAGE);
+    // // get_parameter_or("awbMode", state->camera_parameters.awbMode, AUTO);
+    // // get_parameter_or("imageEffect", state->camera_parameters.imageEffect, NONE);
+    // get_parameter_or("colourEffects_enable", state->camera_parameters.colourEffects.enable, 0);
+    // get_parameter_or("colourEffects_u", state->camera_parameters.colourEffects.u, 128);
+    // get_parameter_or("colourEffects_v", state->camera_parameters.colourEffects.v, 128);
+    // get_parameter_or("rotation", state->camera_parameters.rotation, 0);
+    // get_parameter_or("hflip", state->camera_parameters.hflip, 0);
+    // get_parameter_or("vflip", state->camera_parameters.vflip, 0);
+    // get_parameter_or("roi_x", state->camera_parameters.roi.x, 0.0);
+    // get_parameter_or("roi_y", state->camera_parameters.roi.y, 0.0);
+    // get_parameter_or("roi_w", state->camera_parameters.roi.w, 1.0);
+    // get_parameter_or("roi_h", state->camera_parameters.roi.h, 1.0);
+    // get_parameter_or("shutter_speed", state->camera_parameters.shutter_speed, 0);
 
-    get_parameter_or("awb_gains_r", state->camera_parameters.awb_gains_r, 0.0f);
-    get_parameter_or("awb_gains_b", state->camera_parameters.awb_gains_b, 0.0f);
+    // get_parameter_or("awb_gains_r", state->camera_parameters.awb_gains_r, 0.0f);
+    // get_parameter_or("awb_gains_b", state->camera_parameters.awb_gains_b, 0.0f);
 
-    get_parameter_or("analog_gain", state->camera_parameters.awb_gains_r, 0.0f);
-    get_parameter_or("digital_gain", state->camera_parameters.awb_gains_b, 0.0f);
+    // get_parameter_or("analog_gain", state->camera_parameters.awb_gains_r, 0.0f);
+    // get_parameter_or("digital_gain", state->camera_parameters.awb_gains_b, 0.0f);
 
     pub_img_compressed = create_publisher<sensor_msgs::msg::CompressedImage>("image/compressed", rclcpp::QoS(1));
     pub_info = create_publisher<sensor_msgs::msg::CameraInfo>("image/camera_info", rclcpp::QoS(1));
@@ -148,7 +144,12 @@ void RasPiCamPublisher::onImageRaw(const uint8_t* start, const uint8_t* end) {
     sensor_msgs::msg::Image::UniquePtr msg(new sensor_msgs::msg::Image());
     msg->header.frame_id = "camera";
     msg->header.stamp = tnow;
-    msg->encoding = "rgb8";
+    msg->height = camera_info.height;
+    msg->width = camera_info.width;
+    //calculating the step, must be for video capture a multiple of 16 (32 for stills)
+    uint32_t rounded_width = (uint32_t)(ceil(msg->width/16.0) * 16);//aligned to 16
+    msg->step = rounded_width * 3;
+    msg->encoding = "bgr8";
     msg->data.insert(msg->data.end(), start, end);
     pub_img->publish(std::move(msg));
 

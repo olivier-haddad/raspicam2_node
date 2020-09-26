@@ -1819,7 +1819,7 @@ static int parse_cmdline(int argc, const char **argv, RASPIVID_STATE *state)
 
       case CommandFlush:
       {
-         state->callback_data.flush_buffers = 1;
+         //state->callback_data.flush_buffers = 1;
          break;
       }
       case CommandSavePTS:  // output filename
@@ -1959,178 +1959,178 @@ static int parse_cmdline(int argc, const char **argv, RASPIVID_STATE *state)
  *
  * @param state Pointer to state
  */
-static FILE *open_filename(RASPIVID_STATE *pState, char *filename)
-{
-   FILE *new_handle = NULL;
-   char *tempname = NULL;
+// static FILE *open_filename(RASPIVID_STATE *pState, char *filename)
+// {
+//    FILE *new_handle = NULL;
+//    char *tempname = NULL;
 
-   if (pState->segmentSize || pState->splitWait)
-   {
-      // Create a new filename string
+//    if (pState->segmentSize || pState->splitWait)
+//    {
+//       // Create a new filename string
 
-      //If %d/%u or any valid combination e.g. %04d is specified, assume segment number.
-      bool bSegmentNumber = false;
-      const char* pPercent = strchr(filename, '%');
-      if (pPercent)
-      {
-         pPercent++;
-         while (isdigit(*pPercent))
-            pPercent++;
-         if (*pPercent == 'u' || *pPercent == 'd')
-            bSegmentNumber = true;
-      }
+//       //If %d/%u or any valid combination e.g. %04d is specified, assume segment number.
+//       bool bSegmentNumber = false;
+//       const char* pPercent = strchr(filename, '%');
+//       if (pPercent)
+//       {
+//          pPercent++;
+//          while (isdigit(*pPercent))
+//             pPercent++;
+//          if (*pPercent == 'u' || *pPercent == 'd')
+//             bSegmentNumber = true;
+//       }
 
-      if (bSegmentNumber)
-      {
-         asprintf(&tempname, filename, pState->segmentNumber);
-      }
-      else
-      {
-         char temp_ts_str[100];
-         time_t t = time(NULL);
-         struct tm *tm = localtime(&t);
-         strftime(temp_ts_str, 100, filename, tm);
-         asprintf(&tempname, "%s", temp_ts_str);
-      }
+//       if (bSegmentNumber)
+//       {
+//          asprintf(&tempname, filename, pState->segmentNumber);
+//       }
+//       else
+//       {
+//          char temp_ts_str[100];
+//          time_t t = time(NULL);
+//          struct tm *tm = localtime(&t);
+//          strftime(temp_ts_str, 100, filename, tm);
+//          asprintf(&tempname, "%s", temp_ts_str);
+//       }
 
-      filename = tempname;
-   }
+//       filename = tempname;
+//    }
 
-   if (filename)
-   {
-      bool bNetwork = false;
-      int sfd = -1, socktype;
+//    if (filename)
+//    {
+//       bool bNetwork = false;
+//       int sfd = -1, socktype;
 
-      if(!strncmp("tcp://", filename, 6))
-      {
-         bNetwork = true;
-         socktype = SOCK_STREAM;
-      }
-      else if(!strncmp("udp://", filename, 6))
-      {
-         if (pState->netListen)
-         {
-            fprintf(stderr, "No support for listening in UDP mode\n");
-            exit(131);
-         }
-         bNetwork = true;
-         socktype = SOCK_DGRAM;
-      }
+//       if(!strncmp("tcp://", filename, 6))
+//       {
+//          bNetwork = true;
+//          socktype = SOCK_STREAM;
+//       }
+//       else if(!strncmp("udp://", filename, 6))
+//       {
+//          if (pState->netListen)
+//          {
+//             fprintf(stderr, "No support for listening in UDP mode\n");
+//             exit(131);
+//          }
+//          bNetwork = true;
+//          socktype = SOCK_DGRAM;
+//       }
 
-      if(bNetwork)
-      {
-         unsigned short port;
-         filename += 6;
-         char *colon;
-         if(NULL == (colon = strchr(filename, ':')))
-         {
-            fprintf(stderr, "%s is not a valid IPv4:port, use something like tcp://1.2.3.4:1234 or udp://1.2.3.4:1234\n",
-                    filename);
-            exit(132);
-         }
-         if(1 != sscanf(colon + 1, "%hu", &port))
-         {
-            fprintf(stderr,
-                    "Port parse failed. %s is not a valid network file name, use something like tcp://1.2.3.4:1234 or udp://1.2.3.4:1234\n",
-                    filename);
-            exit(133);
-         }
-         char chTmp = *colon;
-         *colon = 0;
+//       if(bNetwork)
+//       {
+//          unsigned short port;
+//          filename += 6;
+//          char *colon;
+//          if(NULL == (colon = strchr(filename, ':')))
+//          {
+//             fprintf(stderr, "%s is not a valid IPv4:port, use something like tcp://1.2.3.4:1234 or udp://1.2.3.4:1234\n",
+//                     filename);
+//             exit(132);
+//          }
+//          if(1 != sscanf(colon + 1, "%hu", &port))
+//          {
+//             fprintf(stderr,
+//                     "Port parse failed. %s is not a valid network file name, use something like tcp://1.2.3.4:1234 or udp://1.2.3.4:1234\n",
+//                     filename);
+//             exit(133);
+//          }
+//          char chTmp = *colon;
+//          *colon = 0;
 
-         struct sockaddr_in saddr= {};
-         saddr.sin_family = AF_INET;
-         saddr.sin_port = htons(port);
-         if(0 == inet_aton(filename, &saddr.sin_addr))
-         {
-            fprintf(stderr, "inet_aton failed. %s is not a valid IPv4 address\n",
-                    filename);
-            exit(134);
-         }
-         *colon = chTmp;
+//          struct sockaddr_in saddr= {};
+//          saddr.sin_family = AF_INET;
+//          saddr.sin_port = htons(port);
+//          if(0 == inet_aton(filename, &saddr.sin_addr))
+//          {
+//             fprintf(stderr, "inet_aton failed. %s is not a valid IPv4 address\n",
+//                     filename);
+//             exit(134);
+//          }
+//          *colon = chTmp;
 
-         if (pState->netListen)
-         {
-            int sockListen = socket(AF_INET, SOCK_STREAM, 0);
-            if (sockListen >= 0)
-            {
-               int iTmp = 1;
-               setsockopt(sockListen, SOL_SOCKET, SO_REUSEADDR, &iTmp, sizeof(int));//no error handling, just go on
-               if (bind(sockListen, (struct sockaddr *) &saddr, sizeof(saddr)) >= 0)
-               {
-                  while ((-1 == (iTmp = listen(sockListen, 0))) && (EINTR == errno))
-                     ;
-                  if (-1 != iTmp)
-                  {
-                     fprintf(stderr, "Waiting for a TCP connection on %s:%"SCNu16"...",
-                             inet_ntoa(saddr.sin_addr), ntohs(saddr.sin_port));
-                     struct sockaddr_in cli_addr;
-                     socklen_t clilen = sizeof(cli_addr);
-                     while ((-1 == (sfd = accept(sockListen, (struct sockaddr *) &cli_addr, &clilen))) && (EINTR == errno))
-                        ;
-                     if (sfd >= 0)
-                        fprintf(stderr, "Client connected from %s:%"SCNu16"\n", inet_ntoa(cli_addr.sin_addr), ntohs(cli_addr.sin_port));
-                     else
-                        fprintf(stderr, "Error on accept: %s\n", strerror(errno));
-                  }
-                  else//if (-1 != iTmp)
-                  {
-                     fprintf(stderr, "Error trying to listen on a socket: %s\n", strerror(errno));
-                  }
-               }
-               else//if (bind(sockListen, (struct sockaddr *) &saddr, sizeof(saddr)) >= 0)
-               {
-                  fprintf(stderr, "Error on binding socket: %s\n", strerror(errno));
-               }
-            }
-            else//if (sockListen >= 0)
-            {
-               fprintf(stderr, "Error creating socket: %s\n", strerror(errno));
-            }
+//          if (pState->netListen)
+//          {
+//             int sockListen = socket(AF_INET, SOCK_STREAM, 0);
+//             if (sockListen >= 0)
+//             {
+//                int iTmp = 1;
+//                setsockopt(sockListen, SOL_SOCKET, SO_REUSEADDR, &iTmp, sizeof(int));//no error handling, just go on
+//                if (bind(sockListen, (struct sockaddr *) &saddr, sizeof(saddr)) >= 0)
+//                {
+//                   while ((-1 == (iTmp = listen(sockListen, 0))) && (EINTR == errno))
+//                      ;
+//                   if (-1 != iTmp)
+//                   {
+//                      fprintf(stderr, "Waiting for a TCP connection on %s:%"SCNu16"...",
+//                              inet_ntoa(saddr.sin_addr), ntohs(saddr.sin_port));
+//                      struct sockaddr_in cli_addr;
+//                      socklen_t clilen = sizeof(cli_addr);
+//                      while ((-1 == (sfd = accept(sockListen, (struct sockaddr *) &cli_addr, &clilen))) && (EINTR == errno))
+//                         ;
+//                      if (sfd >= 0)
+//                         fprintf(stderr, "Client connected from %s:%"SCNu16"\n", inet_ntoa(cli_addr.sin_addr), ntohs(cli_addr.sin_port));
+//                      else
+//                         fprintf(stderr, "Error on accept: %s\n", strerror(errno));
+//                   }
+//                   else//if (-1 != iTmp)
+//                   {
+//                      fprintf(stderr, "Error trying to listen on a socket: %s\n", strerror(errno));
+//                   }
+//                }
+//                else//if (bind(sockListen, (struct sockaddr *) &saddr, sizeof(saddr)) >= 0)
+//                {
+//                   fprintf(stderr, "Error on binding socket: %s\n", strerror(errno));
+//                }
+//             }
+//             else//if (sockListen >= 0)
+//             {
+//                fprintf(stderr, "Error creating socket: %s\n", strerror(errno));
+//             }
 
-            if (sockListen >= 0)//regardless success or error
-               close(sockListen);//do not listen on a given port anymore
-         }
-         else//if (pState->netListen)
-         {
-            if(0 <= (sfd = socket(AF_INET, socktype, 0)))
-            {
-               fprintf(stderr, "Connecting to %s:%hu...", inet_ntoa(saddr.sin_addr), port);
+//             if (sockListen >= 0)//regardless success or error
+//                close(sockListen);//do not listen on a given port anymore
+//          }
+//          else//if (pState->netListen)
+//          {
+//             if(0 <= (sfd = socket(AF_INET, socktype, 0)))
+//             {
+//                fprintf(stderr, "Connecting to %s:%hu...", inet_ntoa(saddr.sin_addr), port);
 
-               int iTmp = 1;
-               while ((-1 == (iTmp = connect(sfd, (struct sockaddr *) &saddr, sizeof(struct sockaddr_in)))) && (EINTR == errno))
-                  ;
-               if (iTmp < 0)
-                  fprintf(stderr, "error: %s\n", strerror(errno));
-               else
-                  fprintf(stderr, "connected, sending video...\n");
-            }
-            else
-               fprintf(stderr, "Error creating socket: %s\n", strerror(errno));
-         }
+//                int iTmp = 1;
+//                while ((-1 == (iTmp = connect(sfd, (struct sockaddr *) &saddr, sizeof(struct sockaddr_in)))) && (EINTR == errno))
+//                   ;
+//                if (iTmp < 0)
+//                   fprintf(stderr, "error: %s\n", strerror(errno));
+//                else
+//                   fprintf(stderr, "connected, sending video...\n");
+//             }
+//             else
+//                fprintf(stderr, "Error creating socket: %s\n", strerror(errno));
+//          }
 
-         if (sfd >= 0)
-            new_handle = fdopen(sfd, "w");
-      }
-      else
-      {
-         new_handle = fopen(filename, "wb");
-      }
-   }
+//          if (sfd >= 0)
+//             new_handle = fdopen(sfd, "w");
+//       }
+//       else
+//       {
+//          new_handle = fopen(filename, "wb");
+//       }
+//    }
 
-   if (pState->common_settings.verbose)
-   {
-      if (new_handle)
-         fprintf(stderr, "Opening output file \"%s\"\n", filename);
-      else
-         fprintf(stderr, "Failed to open new file \"%s\"\n", filename);
-   }
+//    if (pState->common_settings.verbose)
+//    {
+//       if (new_handle)
+//          fprintf(stderr, "Opening output file \"%s\"\n", filename);
+//       else
+//          fprintf(stderr, "Failed to open new file \"%s\"\n", filename);
+//    }
 
-   if (tempname)
-      free(tempname);
+//    if (tempname)
+//       free(tempname);
 
-   return new_handle;
-}
+//    return new_handle;
+// }
 
 /**
  * Update any annotation data specific to the video.
@@ -2215,8 +2215,9 @@ static void encoder_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf
       int bytes_written = buffer->length;
       int64_t current_time = get_microseconds64()/1000;
 
-      vcos_assert(pData->file_handle);
-      if(pData->pstate->inlineMotionVectors) vcos_assert(pData->imv_file_handle);
+//      vcos_assert(pData->file_handle);
+      // if(pData->pstate->inlineMotionVectors)
+      //    vcos_assert(pData->imv_file_handle);
 
       if (pData->cb_buff)
       {
@@ -2307,7 +2308,7 @@ static void encoder_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf
                ((pData->pstate->segmentSize && current_time > base_time + pData->pstate->segmentSize) ||
                 (pData->pstate->splitWait && pData->pstate->splitNow)))
          {
-            FILE *new_handle;
+//            FILE *new_handle;
 
             base_time = current_time;
 
@@ -2318,86 +2319,86 @@ static void encoder_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf
             if (pData->pstate->segmentWrap && pData->pstate->segmentNumber > pData->pstate->segmentWrap)
                pData->pstate->segmentNumber = 1;
 
-            if (pData->pstate->common_settings.filename && pData->pstate->common_settings.filename[0] != '-')
-            {
-               new_handle = open_filename(pData->pstate, pData->pstate->common_settings.filename);
+            // if (pData->pstate->common_settings.filename && pData->pstate->common_settings.filename[0] != '-')
+            // {
+            //    new_handle = open_filename(pData->pstate, pData->pstate->common_settings.filename);
 
-               if (new_handle)
-               {
-                  fclose(pData->file_handle);
-                  pData->file_handle = new_handle;
-               }
-            }
+            //    if (new_handle)
+            //    {
+            //       fclose(pData->file_handle);
+            //       pData->file_handle = new_handle;
+            //    }
+            // }
 
-            if (pData->pstate->imv_filename && pData->pstate->imv_filename[0] != '-')
-            {
-               new_handle = open_filename(pData->pstate, pData->pstate->imv_filename);
+            // if (pData->pstate->imv_filename && pData->pstate->imv_filename[0] != '-')
+            // {
+            //    new_handle = open_filename(pData->pstate, pData->pstate->imv_filename);
 
-               if (new_handle)
-               {
-                  fclose(pData->imv_file_handle);
-                  pData->imv_file_handle = new_handle;
-               }
-            }
+            //    if (new_handle)
+            //    {
+            //       fclose(pData->imv_file_handle);
+            //       pData->imv_file_handle = new_handle;
+            //    }
+            // }
 
-            if (pData->pstate->pts_filename && pData->pstate->pts_filename[0] != '-')
-            {
-               new_handle = open_filename(pData->pstate, pData->pstate->pts_filename);
+            // if (pData->pstate->pts_filename && pData->pstate->pts_filename[0] != '-')
+            // {
+            //    new_handle = open_filename(pData->pstate, pData->pstate->pts_filename);
 
-               if (new_handle)
-               {
-                  fclose(pData->pts_file_handle);
-                  pData->pts_file_handle = new_handle;
-               }
-            }
+            //    if (new_handle)
+            //    {
+            //       fclose(pData->pts_file_handle);
+            //       pData->pts_file_handle = new_handle;
+            //    }
+            // }
          }
          if (buffer->length)
          {
             mmal_buffer_header_mem_lock(buffer);
-            if(buffer->flags & MMAL_BUFFER_HEADER_FLAG_CODECSIDEINFO)
-            {
-               if(pData->pstate->inlineMotionVectors)
-               {
-                  bytes_written = fwrite(buffer->data, 1, buffer->length, pData->imv_file_handle);
-                  if(pData->flush_buffers) fflush(pData->imv_file_handle);
-               }
-               else
-               {
-                  //We do not want to save inlineMotionVectors...
-                  bytes_written = buffer->length;
-               }
-            }
-            else
-            {
-               bytes_written = fwrite(buffer->data, 1, buffer->length, pData->file_handle);
-               if(pData->flush_buffers)
-               {
-                   fflush(pData->file_handle);
-                   fdatasync(fileno(pData->file_handle));
-               }
+            // if(buffer->flags & MMAL_BUFFER_HEADER_FLAG_CODECSIDEINFO)
+            // {
+            //    if(pData->pstate->inlineMotionVectors)
+            //    {
+            //       bytes_written = fwrite(buffer->data, 1, buffer->length, pData->imv_file_handle);
+            //       if(pData->flush_buffers) fflush(pData->imv_file_handle);
+            //    }
+            //    else
+            //    {
+            //       //We do not want to save inlineMotionVectors...
+            //       bytes_written = buffer->length;
+            //    }
+            // }
+            // else
+            // {
+            //    bytes_written = fwrite(buffer->data, 1, buffer->length, pData->file_handle);
+            //    if(pData->flush_buffers)
+            //    {
+            //        fflush(pData->file_handle);
+            //        fdatasync(fileno(pData->file_handle));
+            //    }
 
-               if (pData->pstate->save_pts &&
-                  !(buffer->flags & MMAL_BUFFER_HEADER_FLAG_CONFIG) &&
-                  buffer->pts != MMAL_TIME_UNKNOWN &&
-                  buffer->pts != pData->pstate->lasttime)
-               {
-                  int64_t pts;
-                  if (pData->pstate->frame == 0)
-                     pData->pstate->starttime = buffer->pts;
-                  pData->pstate->lasttime = buffer->pts;
-                  pts = buffer->pts - pData->pstate->starttime;
-                  fprintf(pData->pts_file_handle, "%lld.%03lld\n", pts/1000, pts%1000);
-                  pData->pstate->frame++;
-               }
-            }
+            //    if (pData->pstate->save_pts &&
+            //       !(buffer->flags & MMAL_BUFFER_HEADER_FLAG_CONFIG) &&
+            //       buffer->pts != MMAL_TIME_UNKNOWN &&
+            //       buffer->pts != pData->pstate->lasttime)
+            //    {
+            //       int64_t pts;
+            //       if (pData->pstate->frame == 0)
+            //          pData->pstate->starttime = buffer->pts;
+            //       pData->pstate->lasttime = buffer->pts;
+            //       pts = buffer->pts - pData->pstate->starttime;
+            //       fprintf(pData->pts_file_handle, "%lld.%03lld\n", pts/1000, pts%1000);
+            //       pData->pstate->frame++;
+            //    }
+            // }
 
             mmal_buffer_header_mem_unlock(buffer);
 
-            if (bytes_written != buffer->length)
-            {
-               vcos_log_error("Failed to write buffer data (%d from %d)- aborting", bytes_written, buffer->length);
-               pData->abort = 1;
-            }
+            // if (bytes_written != buffer->length)
+            // {
+            //    vcos_log_error("Failed to write buffer data (%d from %d)- aborting", bytes_written, buffer->length);
+            //    pData->abort = 1;
+            // }
          }
       }
 
@@ -2453,19 +2454,19 @@ static void splitter_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *bu
       if (buffer->length && pData->pstate->raw_output_fmt == RAW_OUTPUT_FMT_GRAY)
          bytes_to_write = port->format->es->video.width * port->format->es->video.height;
 
-      vcos_assert(pData->raw_file_handle);
+      //vcos_assert(pData->raw_file_handle);
 
       if (bytes_to_write)
       {
          mmal_buffer_header_mem_lock(buffer);
-         bytes_written = fwrite(buffer->data, 1, bytes_to_write, pData->raw_file_handle);
+         //bytes_written = fwrite(buffer->data, 1, bytes_to_write, pData->raw_file_handle);
          mmal_buffer_header_mem_unlock(buffer);
 
-         if (bytes_written != bytes_to_write)
-         {
-            vcos_log_error("Failed to write raw buffer data (%d from %d)- aborting", bytes_written, bytes_to_write);
-            pData->abort = 1;
-         }
+         // if (bytes_written != bytes_to_write)
+         // {
+         //    vcos_log_error("Failed to write raw buffer data (%d from %d)- aborting", bytes_written, bytes_to_write);
+         //    pData->abort = 1;
+         // }
       }
    }
    else
@@ -3263,23 +3264,23 @@ static void destroy_encoder_component(RASPIVID_STATE *state)
  * @param callback Struct contain an abort flag tested for early termination
  *
  */
-static int pause_and_test_abort(RASPIVID_STATE *state, int pause)
-{
-   int wait;
+// static int pause_and_test_abort(RASPIVID_STATE *state, int pause)
+// {
+//    int wait;
 
-   if (!pause)
-      return 0;
+//    if (!pause)
+//       return 0;
 
-   // Going to check every ABORT_INTERVAL milliseconds
-   for (wait = 0; wait < pause; wait+= ABORT_INTERVAL)
-   {
-      vcos_sleep(ABORT_INTERVAL);
-      if (state->callback_data.abort)
-         return 1;
-   }
+//    // Going to check every ABORT_INTERVAL milliseconds
+//    for (wait = 0; wait < pause; wait+= ABORT_INTERVAL)
+//    {
+//       vcos_sleep(ABORT_INTERVAL);
+//       if (state->callback_data.abort)
+//          return 1;
+//    }
 
-   return 0;
-}
+//    return 0;
+// }
 
 
 /**
@@ -3289,128 +3290,128 @@ static int pause_and_test_abort(RASPIVID_STATE *state, int pause)
  *
  * @return !0 if to continue, 0 if reached end of run
  */
-static int wait_for_next_change(RASPIVID_STATE *state)
-{
-   int keep_running = 1;
-   static int64_t complete_time = -1;
+// static int wait_for_next_change(RASPIVID_STATE *state)
+// {
+//    int keep_running = 1;
+//    static int64_t complete_time = -1;
 
-   // Have we actually exceeded our timeout?
-   int64_t current_time =  get_microseconds64()/1000;
+//    // Have we actually exceeded our timeout?
+//    int64_t current_time =  get_microseconds64()/1000;
 
-   if (complete_time == -1)
-      complete_time =  current_time + state->timeout;
+//    if (complete_time == -1)
+//       complete_time =  current_time + state->timeout;
 
-   // if we have run out of time, flag we need to exit
-   if (current_time >= complete_time && state->timeout != 0)
-      keep_running = 0;
+//    // if we have run out of time, flag we need to exit
+//    if (current_time >= complete_time && state->timeout != 0)
+//       keep_running = 0;
 
-   switch (state->waitMethod)
-   {
-   case WAIT_METHOD_NONE:
-      (void)pause_and_test_abort(state, state->timeout);
-      return 0;
+//    switch (state->waitMethod)
+//    {
+//    case WAIT_METHOD_NONE:
+//       (void)pause_and_test_abort(state, state->timeout);
+//       return 0;
 
-   case WAIT_METHOD_FOREVER:
-   {
-      // We never return from this. Expect a ctrl-c to exit or abort.
-      while (!state->callback_data.abort)
-         // Have a sleep so we don't hog the CPU.
-         vcos_sleep(ABORT_INTERVAL);
+//    case WAIT_METHOD_FOREVER:
+//    {
+//       // We never return from this. Expect a ctrl-c to exit or abort.
+//       while (!state->callback_data.abort)
+//          // Have a sleep so we don't hog the CPU.
+//          vcos_sleep(ABORT_INTERVAL);
 
-      return 0;
-   }
+//       return 0;
+//    }
 
-   case WAIT_METHOD_TIMED:
-   {
-      int abort;
+//    case WAIT_METHOD_TIMED:
+//    {
+//       int abort;
 
-      if (state->bCapturing)
-         abort = pause_and_test_abort(state, state->onTime);
-      else
-         abort = pause_and_test_abort(state, state->offTime);
+//       if (state->bCapturing)
+//          abort = pause_and_test_abort(state, state->onTime);
+//       else
+//          abort = pause_and_test_abort(state, state->offTime);
 
-      if (abort)
-         return 0;
-      else
-         return keep_running;
-   }
+//       if (abort)
+//          return 0;
+//       else
+//          return keep_running;
+//    }
 
-   case WAIT_METHOD_KEYPRESS:
-   {
-      char ch;
+//    case WAIT_METHOD_KEYPRESS:
+//    {
+//       char ch;
 
-      if (state->common_settings.verbose)
-         fprintf(stderr, "Press Enter to %s, X then ENTER to exit, [i,o,r] then ENTER to change zoom\n", state->bCapturing ? "pause" : "capture");
+//       if (state->common_settings.verbose)
+//          fprintf(stderr, "Press Enter to %s, X then ENTER to exit, [i,o,r] then ENTER to change zoom\n", state->bCapturing ? "pause" : "capture");
 
-      ch = getchar();
-      if (ch == 'x' || ch == 'X')
-         return 0;
-      else if (ch == 'i' || ch == 'I')
-      {
-         if (state->common_settings.verbose)
-            fprintf(stderr, "Starting zoom in\n");
+//       ch = getchar();
+//       if (ch == 'x' || ch == 'X')
+//          return 0;
+//       else if (ch == 'i' || ch == 'I')
+//       {
+//          if (state->common_settings.verbose)
+//             fprintf(stderr, "Starting zoom in\n");
 
-         raspicamcontrol_zoom_in_zoom_out(state->camera_component, ZOOM_IN, &(state->camera_parameters).roi);
+//          raspicamcontrol_zoom_in_zoom_out(state->camera_component, ZOOM_IN, &(state->camera_parameters).roi);
 
-         if (state->common_settings.verbose)
-            dump_status(state);
-      }
-      else if (ch == 'o' || ch == 'O')
-      {
-         if (state->common_settings.verbose)
-            fprintf(stderr, "Starting zoom out\n");
+//          if (state->common_settings.verbose)
+//             dump_status(state);
+//       }
+//       else if (ch == 'o' || ch == 'O')
+//       {
+//          if (state->common_settings.verbose)
+//             fprintf(stderr, "Starting zoom out\n");
 
-         raspicamcontrol_zoom_in_zoom_out(state->camera_component, ZOOM_OUT, &(state->camera_parameters).roi);
+//          raspicamcontrol_zoom_in_zoom_out(state->camera_component, ZOOM_OUT, &(state->camera_parameters).roi);
 
-         if (state->common_settings.verbose)
-            dump_status(state);
-      }
-      else if (ch == 'r' || ch == 'R')
-      {
-         if (state->common_settings.verbose)
-            fprintf(stderr, "starting reset zoom\n");
+//          if (state->common_settings.verbose)
+//             dump_status(state);
+//       }
+//       else if (ch == 'r' || ch == 'R')
+//       {
+//          if (state->common_settings.verbose)
+//             fprintf(stderr, "starting reset zoom\n");
 
-         raspicamcontrol_zoom_in_zoom_out(state->camera_component, ZOOM_RESET, &(state->camera_parameters).roi);
+//          raspicamcontrol_zoom_in_zoom_out(state->camera_component, ZOOM_RESET, &(state->camera_parameters).roi);
 
-         if (state->common_settings.verbose)
-            dump_status(state);
-      }
+//          if (state->common_settings.verbose)
+//             dump_status(state);
+//       }
 
-      return keep_running;
-   }
+//       return keep_running;
+//    }
 
 
-   case WAIT_METHOD_SIGNAL:
-   {
-      // Need to wait for a SIGUSR1 signal
-      sigset_t waitset;
-      int sig;
-      int result = 0;
+//    case WAIT_METHOD_SIGNAL:
+//    {
+//       // Need to wait for a SIGUSR1 signal
+//       sigset_t waitset;
+//       int sig;
+//       int result = 0;
 
-      sigemptyset( &waitset );
-      sigaddset( &waitset, SIGUSR1 );
+//       sigemptyset( &waitset );
+//       sigaddset( &waitset, SIGUSR1 );
 
-      // We are multi threaded because we use mmal, so need to use the pthread
-      // variant of procmask to block SIGUSR1 so we can wait on it.
-      pthread_sigmask( SIG_BLOCK, &waitset, NULL );
+//       // We are multi threaded because we use mmal, so need to use the pthread
+//       // variant of procmask to block SIGUSR1 so we can wait on it.
+//       pthread_sigmask( SIG_BLOCK, &waitset, NULL );
 
-      if (state->common_settings.verbose)
-      {
-         fprintf(stderr, "Waiting for SIGUSR1 to %s\n", state->bCapturing ? "pause" : "capture");
-      }
+//       if (state->common_settings.verbose)
+//       {
+//          fprintf(stderr, "Waiting for SIGUSR1 to %s\n", state->bCapturing ? "pause" : "capture");
+//       }
 
-      result = sigwait( &waitset, &sig );
+//       result = sigwait( &waitset, &sig );
 
-      if (state->common_settings.verbose && result != 0)
-         fprintf(stderr, "Bad signal received - error %d\n", errno);
+//       if (state->common_settings.verbose && result != 0)
+//          fprintf(stderr, "Bad signal received - error %d\n", errno);
 
-      return keep_running;
-   }
+//       return keep_running;
+//    }
 
-   } // switch
+//    } // switch
 
-   return keep_running;
-}
+//    return keep_running;
+// }
 
 int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t cb_compressed, buffer_callback_t cb_motion)
 {
@@ -3434,9 +3435,11 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
 //   MMAL_PORT_T* video_encoder_input_port = nullptr;
 //   MMAL_PORT_T* video_encoder_output_port = nullptr;
 
-   //video encoder
+   //for compressed images
    MMAL_PORT_T *encoder_input_port = nullptr;
+   //for compressed images
    MMAL_PORT_T *encoder_output_port = nullptr;
+   //for raw images
    MMAL_PORT_T *splitter_output_port = nullptr;
    MMAL_PORT_T *splitter_preview_port = nullptr;
 
@@ -3612,12 +3615,22 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
       if (status == MMAL_SUCCESS)
       {
          // Set up our userdata - this is passed though to the callback where we need the information.
-         state.callback_data.pstate = &state;
-         state.callback_data.abort = false;
+         // state.callback_data.pstate = &state;
+         // state.callback_data.abort = false;
 
          if (state.raw_output)
          {
-            splitter_output_port->userdata = (struct MMAL_PORT_USERDATA_T *)&state.callback_data;
+            PORT_USERDATA* callback_data_raw = new PORT_USERDATA(&state);
+            callback_data_raw->buffer[0] = std::make_unique<uint8_t[]>(IMG_BUFFER_SIZE);
+            callback_data_raw->buffer[1] = std::make_unique<uint8_t[]>(IMG_BUFFER_SIZE);
+            // Set up our userdata - this is passed though to the callback where we
+            // need the information.
+            callback_data_raw->abort = false;
+            callback_data_raw->id = 0;
+            callback_data_raw->frame = 0;
+            callback_data_raw->callback = cb_raw;
+
+            splitter_output_port->userdata = callback_data_raw;
 
             if (state.common_settings.verbose)
                fprintf(stderr, "Enabling splitter output port\n");
@@ -3634,138 +3647,148 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
 
          state.isInit = true;
 
-         state.callback_data.file_handle = NULL;
+         PORT_USERDATA* callback_data_enc = new PORT_USERDATA(&state);
+         callback_data_enc->buffer[0] = std::make_unique<uint8_t[]>(IMG_BUFFER_SIZE);
+         callback_data_enc->buffer[1] = std::make_unique<uint8_t[]>(IMG_BUFFER_SIZE);
+         // Set up our userdata - this is passed though to the callback where we
+         // need the information.
+         callback_data_enc->abort = false;
+         callback_data_enc->id = 0;
+         callback_data_enc->frame = 0;
+         callback_data_enc->callback = cb_compressed;
 
-         if (state.common_settings.filename)
-         {
-            if (state.common_settings.filename[0] == '-')
-            {
-               state.callback_data.file_handle = stdout;
-            }
-            else
-            {
-               state.callback_data.file_handle = open_filename(&state, state.common_settings.filename);
-            }
+         // callback_data_enc->file_handle = NULL;
 
-            if (!state.callback_data.file_handle)
-            {
-               // Notify user, carry on but discarding encoded output buffers
-               vcos_log_error("%s: Error opening output file: %s\nNo output file will be generated\n", __func__, state.common_settings.filename);
-            }
-         }
+         // if (state.common_settings.filename)
+         // {
+         //    if (state.common_settings.filename[0] == '-')
+         //    {
+         //       callback_data_enc->file_handle = stdout;
+         //    }
+         //    else
+         //    {
+         //       callback_data_enc->file_handle = open_filename(&state, state.common_settings.filename);
+         //    }
 
-         state.callback_data.imv_file_handle = NULL;
+         //    if (!callback_data_enc->file_handle)
+         //    {
+         //       // Notify user, carry on but discarding encoded output buffers
+         //       vcos_log_error("%s: Error opening output file: %s\nNo output file will be generated\n", __func__, state.common_settings.filename);
+         //    }
+         // }
 
-         if (state.imv_filename)
-         {
-            if (state.imv_filename[0] == '-')
-            {
-               state.callback_data.imv_file_handle = stdout;
-            }
-            else
-            {
-               state.callback_data.imv_file_handle = open_filename(&state, state.imv_filename);
-            }
+         // callback_data_enc->imv_file_handle = NULL;
 
-            if (!state.callback_data.imv_file_handle)
-            {
-               // Notify user, carry on but discarding encoded output buffers
-               fprintf(stderr, "Error opening output file: %s\nNo output file will be generated\n",state.imv_filename);
-               state.inlineMotionVectors=0;
-            }
-         }
+         // if (state.imv_filename)
+         // {
+         //    if (state.imv_filename[0] == '-')
+         //    {
+         //       callback_data_enc->imv_file_handle = stdout;
+         //    }
+         //    else
+         //    {
+         //       callback_data_enc->imv_file_handle = open_filename(&state, state.imv_filename);
+         //    }
 
-         state.callback_data.pts_file_handle = NULL;
+         //    if (!callback_data_enc->imv_file_handle)
+         //    {
+         //       // Notify user, carry on but discarding encoded output buffers
+         //       fprintf(stderr, "Error opening output file: %s\nNo output file will be generated\n",state.imv_filename);
+         //       state.inlineMotionVectors=0;
+         //    }
+         // }
 
-         if (state.pts_filename)
-         {
-            if (state.pts_filename[0] == '-')
-            {
-               state.callback_data.pts_file_handle = stdout;
-            }
-            else
-            {
-               state.callback_data.pts_file_handle = open_filename(&state, state.pts_filename);
-               if (state.callback_data.pts_file_handle) /* save header for mkvmerge */
-                  fprintf(state.callback_data.pts_file_handle, "# timecode format v2\n");
-            }
+         // callback_data_enc->pts_file_handle = NULL;
 
-            if (!state.callback_data.pts_file_handle)
-            {
-               // Notify user, carry on but discarding encoded output buffers
-               fprintf(stderr, "Error opening output file: %s\nNo output file will be generated\n",state.pts_filename);
-               state.save_pts=0;
-            }
-         }
+         // if (state.pts_filename)
+         // {
+         //    if (state.pts_filename[0] == '-')
+         //    {
+         //       callback_data_enc->pts_file_handle = stdout;
+         //    }
+         //    else
+         //    {
+         //       callback_data_enc->pts_file_handle = open_filename(&state, state.pts_filename);
+         //       if (callback_data_enc->pts_file_handle) /* save header for mkvmerge */
+         //          fprintf(callback_data_enc->pts_file_handle, "# timecode format v2\n");
+         //    }
 
-         state.callback_data.raw_file_handle = NULL;
+         //    if (!callback_data_enc->pts_file_handle)
+         //    {
+         //       // Notify user, carry on but discarding encoded output buffers
+         //       fprintf(stderr, "Error opening output file: %s\nNo output file will be generated\n",state.pts_filename);
+         //       state.save_pts=0;
+         //    }
+         // }
 
-         if (state.raw_filename)
-         {
-            if (state.raw_filename[0] == '-')
-            {
-               state.callback_data.raw_file_handle = stdout;
-            }
-            else
-            {
-               state.callback_data.raw_file_handle = open_filename(&state, state.raw_filename);
-            }
+         // state.callback_data.raw_file_handle = NULL;
 
-            if (!state.callback_data.raw_file_handle)
-            {
-               // Notify user, carry on but discarding encoded output buffers
-               fprintf(stderr, "Error opening output file: %s\nNo output file will be generated\n", state.raw_filename);
-               state.raw_output = false;
-            }
-         }
+         // if (state.raw_filename)
+         // {
+         //    if (state.raw_filename[0] == '-')
+         //    {
+         //       state.callback_data.raw_file_handle = stdout;
+         //    }
+         //    else
+         //    {
+         //       state.callback_data.raw_file_handle = open_filename(&state, state.raw_filename);
+         //    }
 
-         if(state.bCircularBuffer)
-         {
-            if(state.bitrate == 0)
-            {
-               vcos_log_error("%s: Error circular buffer requires constant bitrate and small intra period\n", __func__);
-               goto error;
-            }
-            else if(state.timeout == 0)
-            {
-               vcos_log_error("%s: Error, circular buffer size is based on timeout must be greater than zero\n", __func__);
-               goto error;
-            }
-            else if(state.waitMethod != WAIT_METHOD_KEYPRESS && state.waitMethod != WAIT_METHOD_SIGNAL)
-            {
-               vcos_log_error("%s: Error, Circular buffer mode requires either keypress (-k) or signal (-s) triggering\n", __func__);
-               goto error;
-            }
-            else if(!state.callback_data.file_handle)
-            {
-               vcos_log_error("%s: Error require output file (or stdout) for Circular buffer mode\n", __func__);
-               goto error;
-            }
-            else
-            {
-               int count = state.bitrate * (state.timeout / 1000) / 8;
+         //    if (!state.callback_data.raw_file_handle)
+         //    {
+         //       // Notify user, carry on but discarding encoded output buffers
+         //       fprintf(stderr, "Error opening output file: %s\nNo output file will be generated\n", state.raw_filename);
+         //       state.raw_output = false;
+         //    }
+         // }
 
-               state.callback_data.cb_buff = (char *) malloc(count);
-               if(state.callback_data.cb_buff == NULL)
-               {
-                  vcos_log_error("%s: Unable to allocate circular buffer for %d seconds at %.1f Mbits\n", __func__, state.timeout / 1000, (double)state.bitrate/1000000.0);
-                  goto error;
-               }
-               else
-               {
-                  state.callback_data.cb_len = count;
-                  state.callback_data.cb_wptr = 0;
-                  state.callback_data.cb_wrap = 0;
-                  state.callback_data.cb_data = 0;
-                  state.callback_data.iframe_buff_wpos = 0;
-                  state.callback_data.iframe_buff_rpos = 0;
-                  state.callback_data.header_wptr = 0;
-               }
-            }
-         }
+         // if(state.bCircularBuffer)
+         // {
+         //    if(state.bitrate == 0)
+         //    {
+         //       vcos_log_error("%s: Error circular buffer requires constant bitrate and small intra period\n", __func__);
+         //       goto error;
+         //    }
+         //    else if(state.timeout == 0)
+         //    {
+         //       vcos_log_error("%s: Error, circular buffer size is based on timeout must be greater than zero\n", __func__);
+         //       goto error;
+         //    }
+         //    else if(state.waitMethod != WAIT_METHOD_KEYPRESS && state.waitMethod != WAIT_METHOD_SIGNAL)
+         //    {
+         //       vcos_log_error("%s: Error, Circular buffer mode requires either keypress (-k) or signal (-s) triggering\n", __func__);
+         //       goto error;
+         //    }
+         //    else if(!state.callback_data.file_handle)
+         //    {
+         //       vcos_log_error("%s: Error require output file (or stdout) for Circular buffer mode\n", __func__);
+         //       goto error;
+         //    }
+         //    else
+         //    {
+         //       int count = state.bitrate * (state.timeout / 1000) / 8;
+
+         //       state.callback_data.cb_buff = (char *) malloc(count);
+         //       if(state.callback_data.cb_buff == NULL)
+         //       {
+         //          vcos_log_error("%s: Unable to allocate circular buffer for %d seconds at %.1f Mbits\n", __func__, state.timeout / 1000, (double)state.bitrate/1000000.0);
+         //          goto error;
+         //       }
+         //       else
+         //       {
+         //          state.callback_data.cb_len = count;
+         //          state.callback_data.cb_wptr = 0;
+         //          state.callback_data.cb_wrap = 0;
+         //          state.callback_data.cb_data = 0;
+         //          state.callback_data.iframe_buff_wpos = 0;
+         //          state.callback_data.iframe_buff_rpos = 0;
+         //          state.callback_data.header_wptr = 0;
+         //       }
+         //    }
+         // }
 
          // Set up our userdata - this is passed though to the callback where we need the information.
-         encoder_output_port->userdata = (struct MMAL_PORT_USERDATA_T *)&state.callback_data;
+         encoder_output_port->userdata = callback_data_enc;
 
          if (state.common_settings.verbose)
             fprintf(stderr, "Enabling encoder output port\n");
@@ -3798,12 +3821,12 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
          {
             // Only encode stuff if we have a filename and it opened
             // Note we use the copy in the callback, as the call back MIGHT change the file handle
-            if (state.callback_data.file_handle || state.callback_data.raw_file_handle)
-            {
+            // if (state.callback_data.file_handle || state.callback_data.raw_file_handle)
+            // {
                int running = 1;
 
                // Send all the buffers to the encoder output port
-               if (state.callback_data.file_handle)
+               // if (state.callback_data.file_handle)
                {
                   int num = mmal_queue_length(state.encoder_pool->queue);
                   int q;
@@ -3820,7 +3843,7 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
                }
 
                // Send all the buffers to the splitter output port
-               if (state.callback_data.raw_file_handle)
+//               if (state.callback_data.raw_file_handle)
                {
                   int num = mmal_queue_length(state.splitter_pool->queue);
                   int q;
@@ -3848,11 +3871,11 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
                      // How to handle?
                   }
 
-                  // In circular buffer mode, exit and save the buffer (make sure we do this after having paused the capture
-                  if(state.bCircularBuffer && !state.bCapturing)
-                  {
-                     break;
-                  }
+                  // // In circular buffer mode, exit and save the buffer (make sure we do this after having paused the capture
+                  // if(state.bCircularBuffer && !state.bCapturing)
+                  // {
+                  //    break;
+                  // }
 
                   if (state.common_settings.verbose)
                   {
@@ -3878,23 +3901,23 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
                      }
                      initialCapturing=0;
                   }
-                  running = wait_for_next_change(&state);
+                  //running = wait_for_next_change(&state);
                }
 
                if (state.common_settings.verbose)
                   fprintf(stderr, "Finished capture\n");
-            }
-            else
-            {
-               if (state.timeout)
-                  vcos_sleep(state.timeout);
-               else
-               {
-                  // timeout = 0 so run forever
-                  while(1)
-                     vcos_sleep(ABORT_INTERVAL);
-               }
-            }
+            // }
+            // else
+            // {
+            //    if (state.timeout)
+            //       vcos_sleep(state.timeout);
+            //    else
+            //    {
+            //       // timeout = 0 so run forever
+            //       while(1)
+            //          vcos_sleep(ABORT_INTERVAL);
+            //    }
+            // }
          }
       }
       else
@@ -3903,25 +3926,25 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
          vcos_log_error("%s: Failed to connect camera to preview", __func__);
       }
 
-      if(state.bCircularBuffer)
-      {
-         int copy_from_end, copy_from_start;
+      // if(state.bCircularBuffer)
+      // {
+      //    int copy_from_end, copy_from_start;
 
-         copy_from_end = state.callback_data.cb_len - state.callback_data.iframe_buff[state.callback_data.iframe_buff_rpos];
-         copy_from_start = state.callback_data.cb_len - copy_from_end;
-         copy_from_start = state.callback_data.cb_wptr < copy_from_start ? state.callback_data.cb_wptr : copy_from_start;
-         if(!state.callback_data.cb_wrap)
-         {
-            copy_from_start = state.callback_data.cb_wptr;
-            copy_from_end = 0;
-         }
+      //    copy_from_end = state.callback_data.cb_len - state.callback_data.iframe_buff[state.callback_data.iframe_buff_rpos];
+      //    copy_from_start = state.callback_data.cb_len - copy_from_end;
+      //    copy_from_start = state.callback_data.cb_wptr < copy_from_start ? state.callback_data.cb_wptr : copy_from_start;
+      //    if(!state.callback_data.cb_wrap)
+      //    {
+      //       copy_from_start = state.callback_data.cb_wptr;
+      //       copy_from_end = 0;
+      //    }
 
-         fwrite(state.callback_data.header_bytes, 1, state.callback_data.header_wptr, state.callback_data.file_handle);
-         // Save circular buffer
-         fwrite(state.callback_data.cb_buff + state.callback_data.iframe_buff[state.callback_data.iframe_buff_rpos], 1, copy_from_end, state.callback_data.file_handle);
-         fwrite(state.callback_data.cb_buff, 1, copy_from_start, state.callback_data.file_handle);
-         if(state.callback_data.flush_buffers) fflush(state.callback_data.file_handle);
-      }
+      //    fwrite(state.callback_data.header_bytes, 1, state.callback_data.header_wptr, state.callback_data.file_handle);
+      //    // Save circular buffer
+      //    fwrite(state.callback_data.cb_buff + state.callback_data.iframe_buff[state.callback_data.iframe_buff_rpos], 1, copy_from_end, state.callback_data.file_handle);
+      //    fwrite(state.callback_data.cb_buff, 1, copy_from_start, state.callback_data.file_handle);
+      //    if(state.callback_data.flush_buffers) fflush(state.callback_data.file_handle);
+      // }
 
 error:
 
@@ -3946,14 +3969,14 @@ error:
 
       // Can now close our file. Note disabling ports may flush buffers which causes
       // problems if we have already closed the file!
-      if (state.callback_data.file_handle && state.callback_data.file_handle != stdout)
-         fclose(state.callback_data.file_handle);
-      if (state.callback_data.imv_file_handle && state.callback_data.imv_file_handle != stdout)
-         fclose(state.callback_data.imv_file_handle);
-      if (state.callback_data.pts_file_handle && state.callback_data.pts_file_handle != stdout)
-         fclose(state.callback_data.pts_file_handle);
-      if (state.callback_data.raw_file_handle && state.callback_data.raw_file_handle != stdout)
-         fclose(state.callback_data.raw_file_handle);
+      // if (state.callback_data.file_handle && state.callback_data.file_handle != stdout)
+      //    fclose(state.callback_data.file_handle);
+      // if (state.callback_data.imv_file_handle && state.callback_data.imv_file_handle != stdout)
+      //    fclose(state.callback_data.imv_file_handle);
+      // if (state.callback_data.pts_file_handle && state.callback_data.pts_file_handle != stdout)
+      //    fclose(state.callback_data.pts_file_handle);
+      // if (state.callback_data.raw_file_handle && state.callback_data.raw_file_handle != stdout)
+      //    fclose(state.callback_data.raw_file_handle);
 
       /* Disable components */
       if (state.encoder_component)

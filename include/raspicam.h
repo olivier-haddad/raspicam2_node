@@ -44,11 +44,9 @@ typedef std::function<void(const uint8_t*, const uint8_t*)> buffer_callback_t;
 struct RASPIVID_STATE;
 
 typedef struct MMAL_PORT_USERDATA_T {
-  //MMAL_PORT_USERDATA_T(const RASPIVID_STATE& state) : pstate(state){};
+  MMAL_PORT_USERDATA_T(RASPIVID_STATE* state) : pstate(state){};
   std::unique_ptr<uint8_t[]> buffer[2];  // Memory to write buffer data to.
   //const RASPIVID_STATE& pstate;          // pointer to our state for use by callback
-  //bool abort;                            // Set to 1 in callback if an error occurs to attempt to abort
-                                         // the capture
   int frame;
   int id;
 
@@ -57,24 +55,24 @@ typedef struct MMAL_PORT_USERDATA_T {
   buffer_callback_t callback = nullptr;
   //OH test raspivid
 //{
-   FILE *file_handle;                   /// File handle to write buffer data to.
+//   FILE *file_handle;                   /// File handle to write buffer data to.
    RASPIVID_STATE *pstate;              /// pointer to our state in case required in callback
    bool abort;                           /// Set to 1 in callback if an error occurs to attempt to abort the capture
    char *cb_buff;                       /// Circular buffer
    int   cb_len;                        /// Length of buffer
-   int   cb_wptr;                       /// Current write pointer
-   int   cb_wrap;                       /// Has buffer wrapped at least once?
-   int   cb_data;                       /// Valid bytes in buffer
+  int   cb_wptr;                       /// Current write pointer
+  int   cb_wrap;                       /// Has buffer wrapped at least once?
+  int   cb_data;                       /// Valid bytes in buffer
 #define IFRAME_BUFSIZE (60*1000)
    int   iframe_buff[IFRAME_BUFSIZE];          /// buffer of iframe pointers
    int   iframe_buff_wpos;
    int   iframe_buff_rpos;
    char  header_bytes[29];
    int  header_wptr;
-   FILE *imv_file_handle;               /// File handle to write inline motion vectors to.
-   FILE *raw_file_handle;               /// File handle to write raw data to.
+//   FILE *imv_file_handle;               /// File handle to write inline motion vectors to.
+//   FILE *raw_file_handle;               /// File handle to write raw data to.
    int  flush_buffers;
-   FILE *pts_file_handle;               /// File timestamps
+//   FILE *pts_file_handle;               /// File timestamps
 } PORT_USERDATA;
 
 /** Possible raw output formats
@@ -177,7 +175,7 @@ struct RASPIVID_STATE {
    MMAL_POOL_T *splitter_pool; /// Pointer to the pool of buffers used by splitter output port 0
    MMAL_POOL_T *encoder_pool; /// Pointer to the pool of buffers used by encoder output port
 
-   PORT_USERDATA callback_data;        /// Used to move data to the encoder callback
+   //PORT_USERDATA callback_data;        /// Used to move data to the encoder callback
 
    int bCapturing;                     /// State of capture/pause
    int bCircularBuffer;                /// Whether we are writing to a circular buffer

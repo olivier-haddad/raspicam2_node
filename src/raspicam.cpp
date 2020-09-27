@@ -335,7 +335,7 @@ static MMAL_STATUS_T create_image_encoder_component(RASPIVID_STATE& state) {
   });
   state.image_encoder_component.reset(encoder);
 
-  RCLCPP_DEBUG(state.pNode->get_logger(), "Image encoder component done\n");
+  RCLCPP_DEBUG(state.pNode->get_logger(), "Image encoder component done");
 
   return status;
 
@@ -364,7 +364,7 @@ error:
 
 //   if (status != MMAL_SUCCESS) {
 //     vcos_log_error("Unable to create video encoder component");
-//     RCLCPP_ERROR(state.pNode->get_logger(), "Unable to create video encoder component\n");
+//     RCLCPP_ERROR(state.pNode->get_logger(), "Unable to create video encoder component");
 //     goto error;
 //   }
 
@@ -455,7 +455,7 @@ error:
 //   });
 //   state.video_encoder_component.reset(encoder);
 
-//   ROS_DEBUG("Video encoder component done\n");
+//   ROS_DEBUG("Video encoder component done");
 
 //   return status;
 
@@ -497,7 +497,7 @@ error:
 //   }
 
 //   vcos_log_error("vcos: there are %d splitter outputs", splitter->output_num);
-//   RCLCPP_ERROR(state.pNode->get_logger(), "ROS: there are %d splitter outputs\n", splitter->output_num);
+//   RCLCPP_ERROR(state.pNode->get_logger(), "ROS: there are %d splitter outputs", splitter->output_num);
 //   if (splitter->output_num < 2) {
 //     status = MMAL_ENOSYS;
 //     RCLCPP_ERROR(state.pNode->get_logger(), "Video splitter doesn't have enough output ports");
@@ -601,7 +601,7 @@ error:
 
 //   state.splitter_component.reset(splitter);
 
-//   RCLCPP_INFO(state.pNode->get_logger(), "splitter component done\n");
+//   RCLCPP_INFO(state.pNode->get_logger(), "splitter component done");
 
 //   return status;
 
@@ -1865,7 +1865,7 @@ static void splitter_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *bu
       if (!new_buffer || status != MMAL_SUCCESS)
       {
          vcos_log_error("Unable to return a buffer to the splitter port");
-         RCLCPP_ERROR(state.pNode->get_logger(), "Unable to return a buffer to the splitter port\n");
+         RCLCPP_ERROR(state.pNode->get_logger(), "Unable to return a buffer to the splitter port");
       }
    }
 }
@@ -1891,7 +1891,7 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("Failed to create camera component");
-      RCLCPP_ERROR(state->pNode->get_logger(), "Failed to create camera component\n");
+      RCLCPP_ERROR(state->pNode->get_logger(), "Failed to create camera component");
       goto error;
    }
 
@@ -2024,7 +2024,7 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("camera viewfinder format couldn't be set");
-      RCLCPP_ERROR(state->pNode->get_logger(), "camera preview format couldn't be set\n");
+      RCLCPP_ERROR(state->pNode->get_logger(), "camera preview format couldn't be set");
       goto error;
    }
 
@@ -2064,7 +2064,7 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("camera video format couldn't be set");
-      RCLCPP_ERROR(state->pNode->get_logger(), "camera video format couldn't be set\n");
+      RCLCPP_ERROR(state->pNode->get_logger(), "camera video format couldn't be set");
       goto error;
    }
 
@@ -2094,7 +2094,7 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("camera still format couldn't be set");
-      RCLCPP_ERROR(state->pNode->get_logger(), "camera still format couldn't be set\n");
+      RCLCPP_ERROR(state->pNode->get_logger(), "camera still format couldn't be set");
       goto error;
    }
 
@@ -2108,7 +2108,7 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("camera component couldn't be enabled");
-      RCLCPP_ERROR(state->pNode->get_logger(), "camera component couldn't be enabled\n");
+      RCLCPP_ERROR(state->pNode->get_logger(), "camera component couldn't be enabled");
       goto error;
    }
 
@@ -2178,7 +2178,7 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("Failed to create splitter component");
-      RCLCPP_ERROR(state->pNode->get_logger(), "Unable to create image encoder component\n");
+      RCLCPP_ERROR(state->pNode->get_logger(), "Unable to create image encoder component");
       goto error;
    }
 
@@ -2186,7 +2186,7 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
    {
       status = MMAL_ENOSYS;
       vcos_log_error("Splitter doesn't have any input port");
-      RCLCPP_ERROR(state->pNode->get_logger(), "Video splitter doesn't have input ports\n");
+      RCLCPP_ERROR(state->pNode->get_logger(), "Video splitter doesn't have input ports");
       goto error;
    }
 
@@ -2194,7 +2194,7 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
    {
       status = MMAL_ENOSYS;
       vcos_log_error("Splitter doesn't have enough output ports");
-      RCLCPP_ERROR(state->pNode->get_logger(), "Video splitter doesn't have enough output ports: %d\n", splitter->output_num);
+      RCLCPP_ERROR(state->pNode->get_logger(), "Video splitter doesn't have enough output ports: %d", splitter->output_num);
       goto error;
    }
 
@@ -2209,7 +2209,7 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("Unable to set format on splitter input port");
-      RCLCPP_ERROR(state->pNode->get_logger(), "Unable to set format on splitter input port\n");
+      RCLCPP_ERROR(state->pNode->get_logger(), "Unable to set format on splitter input port");
       goto error;
    }
 
@@ -2239,7 +2239,7 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
          default:
             status = MMAL_EINVAL;
             vcos_log_error("unknown raw output format");
-            RCLCPP_ERROR(state->pNode->get_logger(), "unknown raw output format\n");
+            RCLCPP_ERROR(state->pNode->get_logger(), "unknown raw output format");
             goto error;
          }
       }
@@ -2249,7 +2249,7 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
       if (status != MMAL_SUCCESS)
       {
          vcos_log_error("Unable to set format on splitter output port %d", i);
-         RCLCPP_ERROR(state->pNode->get_logger(), "Unable to enable splitter component\n");
+         RCLCPP_ERROR(state->pNode->get_logger(), "Unable to enable splitter component");
          goto error;
       }
    }
@@ -2270,7 +2270,7 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
    if (!pool)
    {
       vcos_log_error("Failed to create buffer header pool for splitter output port %s", splitter_output->name);
-      RCLCPP_ERROR(state->pNode->get_logger(), "Failed to create buffer header pool for image encoder output port %s\n", splitter_output->name);
+      RCLCPP_ERROR(state->pNode->get_logger(), "Failed to create buffer header pool for image encoder output port %s", splitter_output->name);
    }
 
    state->splitter_pool = pool;
@@ -2331,7 +2331,7 @@ static MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("Unable to create video encoder component");
-    RCLCPP_ERROR(state->pNode->get_logger(), "Unable to create video encoder component\n");
+    RCLCPP_ERROR(state->pNode->get_logger(), "Unable to create video encoder component");
       goto error;
    }
 
@@ -2339,7 +2339,7 @@ static MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
    {
       status = MMAL_ENOSYS;
       vcos_log_error("Video encoder doesn't have input/output ports");
-      RCLCPP_ERROR(state->pNode->get_logger(), "Video encoder doesn't have input/output ports\n");
+      RCLCPP_ERROR(state->pNode->get_logger(), "Video encoder doesn't have input/output ports");
       goto error;
    }
 
@@ -2407,7 +2407,7 @@ static MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("Unable to set format on video encoder output port");
-      RCLCPP_ERROR(state->pNode->get_logger(), "Unable to set format on video encoder output port\n");
+      RCLCPP_ERROR(state->pNode->get_logger(), "Unable to set format on video encoder output port");
       goto error;
    }
 
@@ -2583,7 +2583,7 @@ static MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("Unable to enable video encoder component");
-      RCLCPP_ERROR(state->pNode->get_logger(), "Unable to enable video encoder component\n");
+      RCLCPP_ERROR(state->pNode->get_logger(), "Unable to enable video encoder component");
       goto error;
    }
 
@@ -2593,7 +2593,7 @@ static MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
    if (!pool)
    {
       vcos_log_error("Failed to create buffer header pool for encoder output port %s", encoder_output->name);
-      RCLCPP_ERROR(state->pNode->get_logger(), "Failed to create buffer header pool for video encoder output port %s\n", encoder_output->name);
+      RCLCPP_ERROR(state->pNode->get_logger(), "Failed to create buffer header pool for video encoder output port %s", encoder_output->name);
    }
 
    state->encoder_pool = pool;
@@ -2681,7 +2681,10 @@ static int wait_for_next_change(RASPIVID_STATE *state)
 
    // if we have run out of time, flag we need to exit
    if (current_time >= complete_time && state->timeout != 0)
+   {
+      RCLCPP_ERROR(state->pNode->get_logger(), "Time reached, aborting...");
       keep_running = 0;
+   }
 
    switch (state->waitMethod)
    {
@@ -2724,36 +2727,6 @@ static int wait_for_next_change(RASPIVID_STATE *state)
       ch = getchar();
       if (ch == 'x' || ch == 'X')
          return 0;
-      // else if (ch == 'i' || ch == 'I')
-      // {
-      //    if (state->common_settings.verbose)
-      //       fprintf(stderr, "Starting zoom in\n");
-
-      //    raspicamcontrol_zoom_in_zoom_out(state->camera_component, ZOOM_IN, &(state->camera_parameters).roi);
-
-      //    if (state->common_settings.verbose)
-      //       dump_status(state);
-      // }
-      // else if (ch == 'o' || ch == 'O')
-      // {
-      //    if (state->common_settings.verbose)
-      //       fprintf(stderr, "Starting zoom out\n");
-
-      //    raspicamcontrol_zoom_in_zoom_out(state->camera_component, ZOOM_OUT, &(state->camera_parameters).roi);
-
-      //    if (state->common_settings.verbose)
-      //       dump_status(state);
-      // }
-      // else if (ch == 'r' || ch == 'R')
-      // {
-      //    if (state->common_settings.verbose)
-      //       fprintf(stderr, "starting reset zoom\n");
-
-      //    raspicamcontrol_zoom_in_zoom_out(state->camera_component, ZOOM_RESET, &(state->camera_parameters).roi);
-
-      //    if (state->common_settings.verbose)
-      //       dump_status(state);
-      // }
 
       return keep_running;
    }
@@ -2846,7 +2819,7 @@ int close_cam(RASPIVID_STATE& state)
 
    if (state.common_settings.verbose)
       fprintf(stderr, "Close down completed, all components disconnected, disabled and destroyed\n\n");
-   RCLCPP_INFO(state.pNode->get_logger(), "Video capture stopped\n");
+   RCLCPP_INFO(state.pNode->get_logger(), "Video capture stopped");
 
 //   // Destroy image encoder port connection
 //   state.image_encoder_connection.reset(nullptr);
@@ -2865,19 +2838,14 @@ int close_cam(RASPIVID_STATE& state)
 int start_capture(RASPIVID_STATE& state)
 {
   if (!(state.isInit))
-    RCLCPP_FATAL(state.pNode->get_logger(), "Tried to start capture before camera is initialized\n");
+    RCLCPP_FATAL(state.pNode->get_logger(), "Tried to start capture before camera is initialized");
   
   MMAL_PORT_T* camera_video_port = state.camera_component->output[mmal::camera_port::video];
   //MMAL_PORT_T* image_encoder_output_port = state.image_encoder_component->output[0];
   MMAL_PORT_T* video_encoder_output_port = state.video_encoder_component->output[0];
   MMAL_PORT_T* splitter_output_raw = state.splitter_component->output[1];
-  RCLCPP_INFO(state.pNode->get_logger(), "Starting video capture (%d, %d, %d, %d)\n", state.common_settings.width, state.common_settings.height, state.quality, state.framerate);
+  RCLCPP_INFO(state.pNode->get_logger(), "Starting video capture (%d, %d, %d, %d)", state.common_settings.width, state.common_settings.height, state.quality, state.framerate);
 
-  if (mmal_port_parameter_set_boolean(camera_video_port, MMAL_PARAMETER_CAPTURE, 1) != MMAL_SUCCESS)
-  {
-    RCLCPP_FATAL(state.pNode->get_logger(), "Could not start video port capture.");
-    return 1;
-  }
   // Send all the buffers to the image encoder output port
   {
    //  int num = mmal_queue_length(state.image_encoder_pool->queue);
@@ -2900,11 +2868,11 @@ int start_capture(RASPIVID_STATE& state)
   // Send all the buffers to the video encoder output port
   //if (state.enable_imv_pub)
   {
-    int num = mmal_queue_length(state.video_encoder_pool->queue);
+    int num = mmal_queue_length(state.encoder_pool->queue);
     int q;
     for (q = 0; q < num; q++) 
     {
-      MMAL_BUFFER_HEADER_T* buffer = mmal_queue_get(state.video_encoder_pool->queue);
+      MMAL_BUFFER_HEADER_T* buffer = mmal_queue_get(state.encoder_pool->queue);
 
       if (!buffer)
       {
@@ -2942,7 +2910,14 @@ int start_capture(RASPIVID_STATE& state)
       }
     }
   }
-  RCLCPP_INFO(state.pNode->get_logger(), "Video capture started\n");
+
+  if (mmal_port_parameter_set_boolean(camera_video_port, MMAL_PARAMETER_CAPTURE, 1) != MMAL_SUCCESS)
+  {
+    RCLCPP_FATAL(state.pNode->get_logger(), "Could not start video port capture.");
+    return 1;
+  }
+
+  RCLCPP_INFO(state.pNode->get_logger(), "Video capture started");
   return 0;
 }
 
@@ -2981,7 +2956,7 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
    set_app_name("Raspicam_node");
 
    //already called in RasPiCamPublisher
-   //default_status(&state);
+   //default_status(&state);q
 
    if (state.timeout == -1)
       state.timeout = 10000;
@@ -3007,7 +2982,7 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
    if ((status = create_camera_component(&state)) != MMAL_SUCCESS)
    {
       vcos_log_error("%s: Failed to create camera component", __func__);
-      RCLCPP_ERROR(state.pNode->get_logger(), "%s: Failed to create camera component\n", __func__);
+      RCLCPP_ERROR(state.pNode->get_logger(), "%s: Failed to create camera component", __func__);
       exit_code = EX_SOFTWARE;
    }
    else if ((status = raspipreview_create(&state.preview_parameters)) != MMAL_SUCCESS)
@@ -3141,7 +3116,6 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
             callback_data_raw->buffer[1] = std::make_unique<uint8_t[]>(IMG_BUFFER_SIZE);
             // Set up our userdata - this is passed though to the callback where we
             // need the information.
-            //callback_data_raw->abort = false;
             callback_data_raw->id = 0;
             callback_data_raw->frame = 0;
             callback_data_raw->callback = cb_raw;
@@ -3166,7 +3140,6 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
          callback_data_enc->buffer[1] = std::make_unique<uint8_t[]>(IMG_BUFFER_SIZE);
          // Set up our userdata - this is passed though to the callback where we
          // need the information.
-         //callback_data_enc->abort = false;
          callback_data_enc->id = 0;
          callback_data_enc->frame = 0;
          callback_data_enc->callback = cb_compressed;
@@ -3189,7 +3162,6 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
          state.isInit = true;
          //return 0;
          //************************************************************************
-         vcos_log_error("RUNNING IN %s MODE", state.demoMode ? "DEMO": "REGULAR" );
          {
             int running = 1;
 
@@ -3239,12 +3211,6 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
                   // How to handle?
                }
 
-               // // In circular buffer mode, exit and save the buffer (make sure we do this after having paused the capture
-               // if(state.bCircularBuffer && !state.bCapturing)
-               // {
-               //    break;
-               // }
-
                if (state.common_settings.verbose)
                {
                   if (state.bCapturing)
@@ -3253,22 +3219,6 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
                      fprintf(stderr, "Pausing video capture\n");
                }
 
-               if(state.splitWait)
-               {
-                  if(state.bCapturing)
-                  {
-                     if (mmal_port_parameter_set_boolean(encoder_output_port, MMAL_PARAMETER_VIDEO_REQUEST_I_FRAME, 1) != MMAL_SUCCESS)
-                     {
-                        vcos_log_error("failed to request I-FRAME");
-                     }
-                  }
-                  else
-                  {
-                     if(!initialCapturing)
-                        state.splitNow=1;
-                  }
-                  initialCapturing=0;
-               }
                running = wait_for_next_change(&state);
             }
 
@@ -3281,26 +3231,6 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
          mmal_status_to_int(status);
          vcos_log_error("%s: Failed to connect camera to preview", __func__);
       }
-
-      // if(state.bCircularBuffer)
-      // {
-      //    int copy_from_end, copy_from_start;
-
-      //    copy_from_end = state.callback_data.cb_len - state.callback_data.iframe_buff[state.callback_data.iframe_buff_rpos];
-      //    copy_from_start = state.callback_data.cb_len - copy_from_end;
-      //    copy_from_start = state.callback_data.cb_wptr < copy_from_start ? state.callback_data.cb_wptr : copy_from_start;
-      //    if(!state.callback_data.cb_wrap)
-      //    {
-      //       copy_from_start = state.callback_data.cb_wptr;
-      //       copy_from_end = 0;
-      //    }
-
-      //    fwrite(state.callback_data.header_bytes, 1, state.callback_data.header_wptr, state.callback_data.file_handle);
-      //    // Save circular buffer
-      //    fwrite(state.callback_data.cb_buff + state.callback_data.iframe_buff[state.callback_data.iframe_buff_rpos], 1, copy_from_end, state.callback_data.file_handle);
-      //    fwrite(state.callback_data.cb_buff, 1, copy_from_start, state.callback_data.file_handle);
-      //    if(state.callback_data.flush_buffers) fflush(state.callback_data.file_handle);
-      // }
 
 error:
 

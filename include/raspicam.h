@@ -46,7 +46,6 @@ struct RASPIVID_STATE;
 typedef struct MMAL_PORT_USERDATA_T {
   MMAL_PORT_USERDATA_T(RASPIVID_STATE* state) : pstate(state){};
   std::unique_ptr<uint8_t[]> buffer[2];  // Memory to write buffer data to.
-  //const RASPIVID_STATE& pstate;          // pointer to our state for use by callback
   int frame;
   int id;
 
@@ -55,9 +54,7 @@ typedef struct MMAL_PORT_USERDATA_T {
   buffer_callback_t callback = nullptr;
   //OH test raspivid
 //{
-//   FILE *file_handle;                   /// File handle to write buffer data to.
    RASPIVID_STATE *pstate;              /// pointer to our state in case required in callback
-   //bool abort;                           /// Set to 1 in callback if an error occurs to attempt to abort the capture
    char *cb_buff;                       /// Circular buffer
    int   cb_len;                        /// Length of buffer
   int   cb_wptr;                       /// Current write pointer
@@ -69,10 +66,7 @@ typedef struct MMAL_PORT_USERDATA_T {
    int   iframe_buff_rpos;
    char  header_bytes[29];
    int  header_wptr;
-//   FILE *imv_file_handle;               /// File handle to write inline motion vectors to.
-//   FILE *raw_file_handle;               /// File handle to write raw data to.
    int  flush_buffers;
-//   FILE *pts_file_handle;               /// File timestamps
 } PORT_USERDATA;
 
 /** Possible raw output formats

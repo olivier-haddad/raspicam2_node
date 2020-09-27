@@ -57,7 +57,7 @@ typedef struct MMAL_PORT_USERDATA_T {
 //{
 //   FILE *file_handle;                   /// File handle to write buffer data to.
    RASPIVID_STATE *pstate;              /// pointer to our state in case required in callback
-   bool abort;                           /// Set to 1 in callback if an error occurs to attempt to abort the capture
+   //bool abort;                           /// Set to 1 in callback if an error occurs to attempt to abort the capture
    char *cb_buff;                       /// Circular buffer
    int   cb_len;                        /// Length of buffer
   int   cb_wptr;                       /// Current write pointer
@@ -178,6 +178,7 @@ struct RASPIVID_STATE {
    //PORT_USERDATA callback_data;        /// Used to move data to the encoder callback
 
    int bCapturing;                     /// State of capture/pause
+   bool abort;
    int bCircularBuffer;                /// Whether we are writing to a circular buffer
 
    int inlineMotionVectors;             /// Encoder outputs inline Motion Vectors

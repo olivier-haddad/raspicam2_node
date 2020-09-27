@@ -2454,19 +2454,65 @@ static void splitter_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *bu
       if (buffer->length && pData->pstate->raw_output_fmt == RAW_OUTPUT_FMT_GRAY)
          bytes_to_write = port->format->es->video.width * port->format->es->video.height;
 
+
       //vcos_assert(pData->raw_file_handle);
 
       if (bytes_to_write)
       {
-         mmal_buffer_header_mem_lock(buffer);
-         //bytes_written = fwrite(buffer->data, 1, bytes_to_write, pData->raw_file_handle);
-         mmal_buffer_header_mem_unlock(buffer);
+         if (pData->id != INT_MAX) 
+         {
+            if (pData->id + buffer->length > IMG_BUFFER_SIZE)
+            {
+               ROS_ERROR("pData->id (%d) + buffer->length (%d) > IMG_BUFFER_SIZE (%d), skipping the frame", pData->id, buffer->length, IMG_BUFFER_SIZE);
+               pData->id = INT_MAX;  // mark this frame corrupted
+            }
+            else
+            {
+               mmal_buffer_header_mem_lock(buffer);
+               memcpy(&(pData->buffer[pData->frame & 1].get()[pData->id]), buffer->data, bytes_to_write);
+               pData->id += bytes_to_write;
+               bytes_written = bytes_to_write;
+               mmal_buffer_header_mem_unlock(buffer);
+            }
+         }
 
-         // if (bytes_written != bytes_to_write)
-         // {
-         //    vcos_log_error("Failed to write raw buffer data (%d from %d)- aborting", bytes_written, bytes_to_write);
-         //    pData->abort = 1;
-         // }
+         // mmal_buffer_header_mem_lock(buffer);
+         // //bytes_written = fwrite(buffer->data, 1, bytes_to_write, pData->raw_file_handle);
+         // mmal_buffer_header_mem_unlock(buffer);
+
+         if (bytes_written != bytes_to_write)
+         {
+            vcos_log_error("Failed to write raw buffer data (%d from %d)- aborting", bytes_written, bytes_to_write);
+            pData->pstate->abort = true;
+         }
+
+         int complete = false;
+         if (buffer->flags & (MMAL_BUFFER_HEADER_FLAG_FRAME_END | MMAL_BUFFER_HEADER_FLAG_TRANSMISSION_FAILED))
+            complete = true;
+
+         if (complete)
+         {
+            if (pData->id != INT_MAX)
+            {
+               // ROS_INFO("Frame size %d", pData->id);
+               if (skip_frames > 0 && pData->frames_skipped < skip_frames)
+               {
+                  pData->frames_skipped++;
+               }
+               else
+               {
+                  pData->frames_skipped = 0;
+                  if(pData->callback!=nullptr) 
+                  {
+                     const uint8_t* start = pData->buffer[pData->frame & 1].get();
+                     const uint8_t* end = &(pData->buffer[pData->frame & 1].get()[pData->id]);
+                     pData->callback(start, end);
+                  }
+               }
+            }
+            pData->frame++;
+            pData->id = 0;
+         }
       }
    }
    else
@@ -2488,7 +2534,10 @@ static void splitter_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *bu
          status = mmal_port_send_buffer(port, new_buffer);
 
       if (!new_buffer || status != MMAL_SUCCESS)
+      {
          vcos_log_error("Unable to return a buffer to the splitter port");
+         ROS_ERROR("Unable to return a buffer to the splitter port\n");
+      }
    }
 }
 
@@ -3264,23 +3313,23 @@ static void destroy_encoder_component(RASPIVID_STATE *state)
  * @param callback Struct contain an abort flag tested for early termination
  *
  */
-// static int pause_and_test_abort(RASPIVID_STATE *state, int pause)
-// {
-//    int wait;
+static int pause_and_test_abort(RASPIVID_STATE *state, int pause)
+{
+   int wait;
 
-//    if (!pause)
-//       return 0;
+   if (!pause)
+      return 0;
 
-//    // Going to check every ABORT_INTERVAL milliseconds
-//    for (wait = 0; wait < pause; wait+= ABORT_INTERVAL)
-//    {
-//       vcos_sleep(ABORT_INTERVAL);
-//       if (state->callback_data.abort)
-//          return 1;
-//    }
+   // Going to check every ABORT_INTERVAL milliseconds
+   for (wait = 0; wait < pause; wait+= ABORT_INTERVAL)
+   {
+      vcos_sleep(ABORT_INTERVAL);
+      if (state->abort)
+         return 1;
+   }
 
-//    return 0;
-// }
+   return 0;
+}
 
 
 /**
@@ -3290,128 +3339,128 @@ static void destroy_encoder_component(RASPIVID_STATE *state)
  *
  * @return !0 if to continue, 0 if reached end of run
  */
-// static int wait_for_next_change(RASPIVID_STATE *state)
-// {
-//    int keep_running = 1;
-//    static int64_t complete_time = -1;
+static int wait_for_next_change(RASPIVID_STATE *state)
+{
+   int keep_running = 1;
+   static int64_t complete_time = -1;
 
-//    // Have we actually exceeded our timeout?
-//    int64_t current_time =  get_microseconds64()/1000;
+   // Have we actually exceeded our timeout?
+   int64_t current_time =  get_microseconds64()/1000;
 
-//    if (complete_time == -1)
-//       complete_time =  current_time + state->timeout;
+   if (complete_time == -1)
+      complete_time =  current_time + state->timeout;
 
-//    // if we have run out of time, flag we need to exit
-//    if (current_time >= complete_time && state->timeout != 0)
-//       keep_running = 0;
+   // if we have run out of time, flag we need to exit
+   if (current_time >= complete_time && state->timeout != 0)
+      keep_running = 0;
 
-//    switch (state->waitMethod)
-//    {
-//    case WAIT_METHOD_NONE:
-//       (void)pause_and_test_abort(state, state->timeout);
-//       return 0;
+   switch (state->waitMethod)
+   {
+   case WAIT_METHOD_NONE:
+      (void)pause_and_test_abort(state, state->timeout);
+      return 0;
 
-//    case WAIT_METHOD_FOREVER:
-//    {
-//       // We never return from this. Expect a ctrl-c to exit or abort.
-//       while (!state->callback_data.abort)
-//          // Have a sleep so we don't hog the CPU.
-//          vcos_sleep(ABORT_INTERVAL);
+   case WAIT_METHOD_FOREVER:
+   {
+      // We never return from this. Expect a ctrl-c to exit or abort.
+      while (!state->abort)
+         // Have a sleep so we don't hog the CPU.
+         vcos_sleep(ABORT_INTERVAL);
 
-//       return 0;
-//    }
+      return 0;
+   }
 
-//    case WAIT_METHOD_TIMED:
-//    {
-//       int abort;
+   case WAIT_METHOD_TIMED:
+   {
+      int abort;
 
-//       if (state->bCapturing)
-//          abort = pause_and_test_abort(state, state->onTime);
-//       else
-//          abort = pause_and_test_abort(state, state->offTime);
+      if (state->bCapturing)
+         abort = pause_and_test_abort(state, state->onTime);
+      else
+         abort = pause_and_test_abort(state, state->offTime);
 
-//       if (abort)
-//          return 0;
-//       else
-//          return keep_running;
-//    }
+      if (abort)
+         return 0;
+      else
+         return keep_running;
+   }
 
-//    case WAIT_METHOD_KEYPRESS:
-//    {
-//       char ch;
+   case WAIT_METHOD_KEYPRESS:
+   {
+      char ch;
 
-//       if (state->common_settings.verbose)
-//          fprintf(stderr, "Press Enter to %s, X then ENTER to exit, [i,o,r] then ENTER to change zoom\n", state->bCapturing ? "pause" : "capture");
+      if (state->common_settings.verbose)
+         fprintf(stderr, "Press Enter to %s, X then ENTER to exit, [i,o,r] then ENTER to change zoom\n", state->bCapturing ? "pause" : "capture");
 
-//       ch = getchar();
-//       if (ch == 'x' || ch == 'X')
-//          return 0;
-//       else if (ch == 'i' || ch == 'I')
-//       {
-//          if (state->common_settings.verbose)
-//             fprintf(stderr, "Starting zoom in\n");
+      ch = getchar();
+      if (ch == 'x' || ch == 'X')
+         return 0;
+      // else if (ch == 'i' || ch == 'I')
+      // {
+      //    if (state->common_settings.verbose)
+      //       fprintf(stderr, "Starting zoom in\n");
 
-//          raspicamcontrol_zoom_in_zoom_out(state->camera_component, ZOOM_IN, &(state->camera_parameters).roi);
+      //    raspicamcontrol_zoom_in_zoom_out(state->camera_component, ZOOM_IN, &(state->camera_parameters).roi);
 
-//          if (state->common_settings.verbose)
-//             dump_status(state);
-//       }
-//       else if (ch == 'o' || ch == 'O')
-//       {
-//          if (state->common_settings.verbose)
-//             fprintf(stderr, "Starting zoom out\n");
+      //    if (state->common_settings.verbose)
+      //       dump_status(state);
+      // }
+      // else if (ch == 'o' || ch == 'O')
+      // {
+      //    if (state->common_settings.verbose)
+      //       fprintf(stderr, "Starting zoom out\n");
 
-//          raspicamcontrol_zoom_in_zoom_out(state->camera_component, ZOOM_OUT, &(state->camera_parameters).roi);
+      //    raspicamcontrol_zoom_in_zoom_out(state->camera_component, ZOOM_OUT, &(state->camera_parameters).roi);
 
-//          if (state->common_settings.verbose)
-//             dump_status(state);
-//       }
-//       else if (ch == 'r' || ch == 'R')
-//       {
-//          if (state->common_settings.verbose)
-//             fprintf(stderr, "starting reset zoom\n");
+      //    if (state->common_settings.verbose)
+      //       dump_status(state);
+      // }
+      // else if (ch == 'r' || ch == 'R')
+      // {
+      //    if (state->common_settings.verbose)
+      //       fprintf(stderr, "starting reset zoom\n");
 
-//          raspicamcontrol_zoom_in_zoom_out(state->camera_component, ZOOM_RESET, &(state->camera_parameters).roi);
+      //    raspicamcontrol_zoom_in_zoom_out(state->camera_component, ZOOM_RESET, &(state->camera_parameters).roi);
 
-//          if (state->common_settings.verbose)
-//             dump_status(state);
-//       }
+      //    if (state->common_settings.verbose)
+      //       dump_status(state);
+      // }
 
-//       return keep_running;
-//    }
+      return keep_running;
+   }
 
 
-//    case WAIT_METHOD_SIGNAL:
-//    {
-//       // Need to wait for a SIGUSR1 signal
-//       sigset_t waitset;
-//       int sig;
-//       int result = 0;
+   case WAIT_METHOD_SIGNAL:
+   {
+      // Need to wait for a SIGUSR1 signal
+      sigset_t waitset;
+      int sig;
+      int result = 0;
 
-//       sigemptyset( &waitset );
-//       sigaddset( &waitset, SIGUSR1 );
+      sigemptyset( &waitset );
+      sigaddset( &waitset, SIGUSR1 );
 
-//       // We are multi threaded because we use mmal, so need to use the pthread
-//       // variant of procmask to block SIGUSR1 so we can wait on it.
-//       pthread_sigmask( SIG_BLOCK, &waitset, NULL );
+      // We are multi threaded because we use mmal, so need to use the pthread
+      // variant of procmask to block SIGUSR1 so we can wait on it.
+      pthread_sigmask( SIG_BLOCK, &waitset, NULL );
 
-//       if (state->common_settings.verbose)
-//       {
-//          fprintf(stderr, "Waiting for SIGUSR1 to %s\n", state->bCapturing ? "pause" : "capture");
-//       }
+      if (state->common_settings.verbose)
+      {
+         fprintf(stderr, "Waiting for SIGUSR1 to %s\n", state->bCapturing ? "pause" : "capture");
+      }
 
-//       result = sigwait( &waitset, &sig );
+      result = sigwait( &waitset, &sig );
 
-//       if (state->common_settings.verbose && result != 0)
-//          fprintf(stderr, "Bad signal received - error %d\n", errno);
+      if (state->common_settings.verbose && result != 0)
+         fprintf(stderr, "Bad signal received - error %d\n", errno);
 
-//       return keep_running;
-//    }
+      return keep_running;
+   }
 
-//    } // switch
+   } // switch
 
-//    return keep_running;
-// }
+   return keep_running;
+}
 
 int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t cb_compressed, buffer_callback_t cb_motion)
 {
@@ -3625,7 +3674,7 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
             callback_data_raw->buffer[1] = std::make_unique<uint8_t[]>(IMG_BUFFER_SIZE);
             // Set up our userdata - this is passed though to the callback where we
             // need the information.
-            callback_data_raw->abort = false;
+            //callback_data_raw->abort = false;
             callback_data_raw->id = 0;
             callback_data_raw->frame = 0;
             callback_data_raw->callback = cb_raw;
@@ -3652,7 +3701,7 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
          callback_data_enc->buffer[1] = std::make_unique<uint8_t[]>(IMG_BUFFER_SIZE);
          // Set up our userdata - this is passed though to the callback where we
          // need the information.
-         callback_data_enc->abort = false;
+         //callback_data_enc->abort = false;
          callback_data_enc->id = 0;
          callback_data_enc->frame = 0;
          callback_data_enc->callback = cb_compressed;
@@ -3901,7 +3950,7 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
                      }
                      initialCapturing=0;
                   }
-                  //running = wait_for_next_change(&state);
+                  running = wait_for_next_change(&state);
                }
 
                if (state.common_settings.verbose)

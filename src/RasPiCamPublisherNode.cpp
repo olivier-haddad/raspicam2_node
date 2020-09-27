@@ -4,6 +4,7 @@
 RasPiCamPublisher::RasPiCamPublisher(rclcpp::NodeOptions options)
   : Node("raspicam2", "camera", options.use_intra_process_comms(true)) {
     state = std::make_shared<RASPIVID_STATE>();
+    state->pNode = this;
 
     default_status(state.get());
 

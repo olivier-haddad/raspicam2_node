@@ -73,12 +73,7 @@ extern "C" {
 } // C header
 
 #include <raspicam.h>
-
-#define ROS_INFO(...) fprintf(stdout, __VA_ARGS__);
-#define ROS_DEBUG(...) fprintf(stdout, __VA_ARGS__);
-#define ROS_WARN(...) fprintf(stderr, __VA_ARGS__);
-#define ROS_ERROR(...) fprintf(stderr, __VA_ARGS__);
-#define ROS_FATAL(...) fprintf(stderr, __VA_ARGS__);
+#include <rclcpp/rclcpp.hpp>
 
 static constexpr int IMG_BUFFER_SIZE = 10 * 1024 * 1024;  // 10 MB
 
@@ -106,7 +101,7 @@ static void image_encoder_buffer_callback(MMAL_PORT_T* port, MMAL_BUFFER_HEADER_
   //   if (buffer->length) {
   //     if (pData->id != INT_MAX) {
   //       if (pData->id + buffer->length > IMG_BUFFER_SIZE) {
-  //         ROS_ERROR("pData->id (%d) + buffer->length (%d) > "
+  //         RCLCPP_ERROR(state.pNode->get_logger(), "pData->id (%d) + buffer->length (%d) > "
   //                   "IMG_BUFFER_SIZE (%d), skipping the frame",
   //                   pData->id, buffer->length, IMG_BUFFER_SIZE);
   //         pData->id = INT_MAX;  // mark this frame corrupted
@@ -121,7 +116,7 @@ static void image_encoder_buffer_callback(MMAL_PORT_T* port, MMAL_BUFFER_HEADER_
 
   //   if (bytes_written != buffer->length) {
   //     vcos_log_error("Failed to write buffer data (%d from %d)- aborting", bytes_written, buffer->length);
-  //     ROS_ERROR("Failed to write buffer data (%d from %d)- aborting", bytes_written, buffer->length);
+  //     RCLCPP_ERROR(state.pNode->get_logger(), "Failed to write buffer data (%d from %d)- aborting", bytes_written, buffer->length);
   //     pData->abort = true;
   //   }
 
@@ -131,7 +126,7 @@ static void image_encoder_buffer_callback(MMAL_PORT_T* port, MMAL_BUFFER_HEADER_
 
   //   if (complete) {
   //     if (pData->id != INT_MAX) {
-  //       // ROS_INFO("Frame size %d", pData->id);
+  //       // RCLCPP_INFO(state.pNode->get_logger(), "Frame size %d", pData->id);
   //       if (skip_frames > 0 && pData->frames_skipped < skip_frames) {
   //         pData->frames_skipped++;
   //       } else {
@@ -162,7 +157,7 @@ static void image_encoder_buffer_callback(MMAL_PORT_T* port, MMAL_BUFFER_HEADER_
 
   //   if (!new_buffer || status != MMAL_SUCCESS) {
   //     vcos_log_error("Unable to return a buffer to the image encoder port");
-  //     ROS_ERROR("Unable to return a buffer to the image encoder port");
+  //     RCLCPP_ERROR(state.pNode->get_logger(), "Unable to return a buffer to the image encoder port");
   //   }
   // }
 }
@@ -244,7 +239,7 @@ static void video_encoder_buffer_callback(MMAL_PORT_T* port, MMAL_BUFFER_HEADER_
 
 //     if (!new_buffer || status != MMAL_SUCCESS) {
 //       vcos_log_error("Unable to return a buffer to the video encoder port");
-//       ROS_ERROR("Unable to return a buffer to the video encoder port");
+//       RCLCPP_ERROR(state.pNode->get_logger(), "Unable to return a buffer to the video encoder port");
 //     }
 //   }
 }
@@ -267,14 +262,14 @@ static MMAL_STATUS_T create_image_encoder_component(RASPIVID_STATE& state) {
 
   if (status != MMAL_SUCCESS) {
     vcos_log_error("Unable to create image encoder component");
-    ROS_ERROR("Unable to create image encoder component");
+    RCLCPP_ERROR(state.pNode->get_logger(), "Unable to create image encoder component");
     goto error;
   }
 
   if (!encoder->input_num || !encoder->output_num) {
     status = MMAL_ENOSYS;
     vcos_log_error("Image encoder doesn't have input/output ports");
-    ROS_ERROR("Image encoder doesn't have input/output ports");
+    RCLCPP_ERROR(state.pNode->get_logger(), "Image encoder doesn't have input/output ports");
     goto error;
   }
 
@@ -302,7 +297,7 @@ static MMAL_STATUS_T create_image_encoder_component(RASPIVID_STATE& state) {
 
   if (status != MMAL_SUCCESS) {
     vcos_log_error("Unable to set format on image encoder output port");
-    ROS_ERROR("Unable to set format on image encoder output port");
+    RCLCPP_ERROR(state.pNode->get_logger(), "Unable to set format on image encoder output port");
     goto error;
   }
 
@@ -311,7 +306,7 @@ static MMAL_STATUS_T create_image_encoder_component(RASPIVID_STATE& state) {
 
   if (status != MMAL_SUCCESS) {
     vcos_log_error("Unable to set JPEG quality");
-    ROS_ERROR("Unable to set JPEG quality");
+    RCLCPP_ERROR(state.pNode->get_logger(), "Unable to set JPEG quality");
     goto error;
   }
 
@@ -320,7 +315,7 @@ static MMAL_STATUS_T create_image_encoder_component(RASPIVID_STATE& state) {
 
   if (status != MMAL_SUCCESS) {
     vcos_log_error("Unable to enable image encoder component");
-    ROS_ERROR("Unable to enable image encoder component");
+    RCLCPP_ERROR(state.pNode->get_logger(), "Unable to enable image encoder component");
     goto error;
   }
 
@@ -329,7 +324,7 @@ static MMAL_STATUS_T create_image_encoder_component(RASPIVID_STATE& state) {
 
   if (!pool) {
     vcos_log_error("Failed to create buffer header pool for image encoder output port %s", encoder_output->name);
-    ROS_ERROR("Failed to create buffer header pool for image encoder output port %s", encoder_output->name);
+    RCLCPP_ERROR(state.pNode->get_logger(), "Failed to create buffer header pool for image encoder output port %s", encoder_output->name);
   }
 
   state.image_encoder_pool = mmal::pool_ptr(pool, [encoder](MMAL_POOL_T* ptr) {
@@ -340,7 +335,7 @@ static MMAL_STATUS_T create_image_encoder_component(RASPIVID_STATE& state) {
   });
   state.image_encoder_component.reset(encoder);
 
-  ROS_DEBUG("Image encoder component done\n");
+  RCLCPP_DEBUG(state.pNode->get_logger(), "Image encoder component done\n");
 
   return status;
 
@@ -369,14 +364,14 @@ error:
 
 //   if (status != MMAL_SUCCESS) {
 //     vcos_log_error("Unable to create video encoder component");
-//     ROS_ERROR("Unable to create video encoder component\n");
+//     RCLCPP_ERROR(state.pNode->get_logger(), "Unable to create video encoder component\n");
 //     goto error;
 //   }
 
 //   if (!encoder->input_num || !encoder->output_num) {
 //     status = MMAL_ENOSYS;
 //     vcos_log_error("Video encoder doesn't have input/output ports");
-//     ROS_ERROR("Video encoder doesn't have input/output ports");
+//     RCLCPP_ERROR(state.pNode->get_logger(), "Video encoder doesn't have input/output ports");
 //     goto error;
 //   }
 
@@ -411,7 +406,7 @@ error:
 //   status = mmal_port_format_commit(encoder_output);
 //   if (status != MMAL_SUCCESS) {
 //     vcos_log_error("Unable to set format on video encoder output port");
-//     ROS_ERROR("Unable to set format on video encoder output port");
+//     RCLCPP_ERROR(state.pNode->get_logger(), "Unable to set format on video encoder output port");
 //     goto error;
 //   }
 
@@ -424,14 +419,14 @@ error:
 //   status = mmal_port_parameter_set(encoder_output, &param.hdr);
 //   if (status != MMAL_SUCCESS) {
 //     vcos_log_error("Unable to set H264 profile on video encoder output port");
-//     ROS_ERROR("Unable to set H264 profile on video encoder output port");
+//     RCLCPP_ERROR(state.pNode->get_logger(), "Unable to set H264 profile on video encoder output port");
 //     goto error;
 //   }
 
 //   status = mmal_port_parameter_set_boolean(encoder_output, MMAL_PARAMETER_VIDEO_ENCODE_INLINE_VECTORS, 1);
 //   if (status != MMAL_SUCCESS) {
 //     vcos_log_error("failed to set INLINE VECTORS parameters");
-//     ROS_ERROR("failed to set INLINE VECTORS parameters");
+//     RCLCPP_ERROR(state.pNode->get_logger(), "failed to set INLINE VECTORS parameters");
 //     goto error;
 //   }
 
@@ -440,7 +435,7 @@ error:
 
 //   if (status != MMAL_SUCCESS) {
 //     vcos_log_error("Unable to enable video encoder component");
-//     ROS_ERROR("Unable to enable video encoder component");
+//     RCLCPP_ERROR(state.pNode->get_logger(), "Unable to enable video encoder component");
 //     goto error;
 //   }
 
@@ -449,7 +444,7 @@ error:
 
 //   if (!pool) {
 //     vcos_log_error("Failed to create buffer header pool for video encoder output port %s", encoder_output->name);
-//     ROS_ERROR("Failed to create buffer header pool for video encoder output port %s", encoder_output->name);
+//     RCLCPP_ERROR(state.pNode->get_logger(), "Failed to create buffer header pool for video encoder output port %s", encoder_output->name);
 //   }
 
 //   state.video_encoder_pool = mmal::pool_ptr(pool, [encoder](MMAL_POOL_T* ptr) {
@@ -491,21 +486,21 @@ error:
 
 //   if (status != MMAL_SUCCESS) {
 //     vcos_log_error("Unable to create image encoder component");
-//     ROS_ERROR("Unable to create image encoder component");
+//     RCLCPP_ERROR(state.pNode->get_logger(), "Unable to create image encoder component");
 //     goto error;
 //   }
 
 //   if (!splitter->input_num) {
 //     status = MMAL_ENOSYS;
-//     ROS_ERROR("Video splitter doesn't have input ports");
+//     RCLCPP_ERROR(state.pNode->get_logger(), "Video splitter doesn't have input ports");
 //     goto error;
 //   }
 
 //   vcos_log_error("vcos: there are %d splitter outputs", splitter->output_num);
-//   ROS_ERROR("ROS: there are %d splitter outputs\n", splitter->output_num);
+//   RCLCPP_ERROR(state.pNode->get_logger(), "ROS: there are %d splitter outputs\n", splitter->output_num);
 //   if (splitter->output_num < 2) {
 //     status = MMAL_ENOSYS;
-//     ROS_ERROR("Video splitter doesn't have enough output ports");
+//     RCLCPP_ERROR(state.pNode->get_logger(), "Video splitter doesn't have enough output ports");
 //     goto error;
 //   }
 
@@ -524,7 +519,7 @@ error:
 
 //   if (status != MMAL_SUCCESS) {
 //     vcos_log_error("Unable to set format on splitter input port");
-//     ROS_ERROR("Unable to set format on splitter input port");
+//     RCLCPP_ERROR(state.pNode->get_logger(), "Unable to set format on splitter input port");
 //     goto error;
 //   }
 
@@ -581,7 +576,7 @@ error:
 
 //   if (status != MMAL_SUCCESS) {
 //     vcos_log_error("Unable to enable splitter component");
-//     ROS_ERROR("Unable to enable splitter component");
+//     RCLCPP_ERROR(state.pNode->get_logger(), "Unable to enable splitter component");
 //     goto error;
 //   }
 
@@ -592,7 +587,7 @@ error:
 
 //   if (!pool) {
 //     vcos_log_error("Failed to create buffer header pool for image encoder output port %s", splitter_output_raw->name);
-//     ROS_ERROR("Failed to create buffer header pool for image encoder output port %s", splitter_output_raw->name);
+//     RCLCPP_ERROR(state.pNode->get_logger(), "Failed to create buffer header pool for image encoder output port %s", splitter_output_raw->name);
 //   }
 
 //   /*** Push to state struct ***/
@@ -606,7 +601,7 @@ error:
 
 //   state.splitter_component.reset(splitter);
 
-//   ROS_INFO("splitter component done\n");
+//   RCLCPP_INFO(state.pNode->get_logger(), "splitter component done\n");
 
 //   return status;
 
@@ -1494,6 +1489,7 @@ static void encoder_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf
    // We pass our file handle and other stuff in via the userdata field.
 
    PORT_USERDATA *pData = (PORT_USERDATA *)port->userdata;
+   RASPIVID_STATE& state = *(pData->pstate);
 
    if (pData)
    {
@@ -1510,7 +1506,7 @@ static void encoder_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf
          {
             if (pData->id + buffer->length > IMG_BUFFER_SIZE) 
             {
-               ROS_ERROR("pData->id (%d) + buffer->length (%d) > IMG_BUFFER_SIZE (%d), skipping the frame",                         pData->id, buffer->length, IMG_BUFFER_SIZE);
+               RCLCPP_ERROR(state.pNode->get_logger(), "pData->id (%d) + buffer->length (%d) > IMG_BUFFER_SIZE (%d), skipping the frame",                         pData->id, buffer->length, IMG_BUFFER_SIZE);
                pData->id = INT_MAX;  // mark this frame corrupted
             }
             else
@@ -1526,7 +1522,7 @@ static void encoder_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf
       if (bytes_written != buffer->length) 
       {
          vcos_log_error("Failed to write buffer data (%d from %d)- aborting", bytes_written, buffer->length);
-         ROS_ERROR("Failed to write buffer data (%d from %d)- aborting", bytes_written, buffer->length);
+         RCLCPP_ERROR(state.pNode->get_logger(), "Failed to write buffer data (%d from %d)- aborting", bytes_written, buffer->length);
          pData->pstate->abort = true;
       }
 
@@ -1538,7 +1534,7 @@ static void encoder_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf
       {
          if (pData->id != INT_MAX) 
          {
-            // ROS_INFO("Frame size %d", pData->id);
+            // RCLCPP_INFO(state.pNode->get_logger(), "Frame size %d", pData->id);
             if (skip_frames > 0 && pData->frames_skipped < skip_frames) 
             {
                pData->frames_skipped++;
@@ -1783,6 +1779,7 @@ static void splitter_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *bu
 {
    MMAL_BUFFER_HEADER_T *new_buffer;
    PORT_USERDATA *pData = port->userdata;
+   RASPIVID_STATE& state = *(pData->pstate);
 
    if (pData && pData->pstate->isInit)
    {
@@ -1799,7 +1796,7 @@ static void splitter_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *bu
          {
             if (pData->id + buffer->length > IMG_BUFFER_SIZE)
             {
-               ROS_ERROR("pData->id (%d) + buffer->length (%d) > IMG_BUFFER_SIZE (%d), skipping the frame", pData->id, buffer->length, IMG_BUFFER_SIZE);
+               RCLCPP_ERROR(state.pNode->get_logger(), "pData->id (%d) + buffer->length (%d) > IMG_BUFFER_SIZE (%d), skipping the frame", pData->id, buffer->length, IMG_BUFFER_SIZE);
                pData->id = INT_MAX;  // mark this frame corrupted
             }
             else
@@ -1826,7 +1823,7 @@ static void splitter_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *bu
          {
             if (pData->id != INT_MAX)
             {
-               // ROS_INFO("Frame size %d", pData->id);
+               // RCLCPP_INFO(state.pNode->get_logger(), "Frame size %d", pData->id);
                if (skip_frames > 0 && pData->frames_skipped < skip_frames)
                {
                   pData->frames_skipped++;
@@ -1868,7 +1865,7 @@ static void splitter_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *bu
       if (!new_buffer || status != MMAL_SUCCESS)
       {
          vcos_log_error("Unable to return a buffer to the splitter port");
-         ROS_ERROR("Unable to return a buffer to the splitter port\n");
+         RCLCPP_ERROR(state.pNode->get_logger(), "Unable to return a buffer to the splitter port\n");
       }
    }
 }
@@ -1894,7 +1891,7 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("Failed to create camera component");
-      ROS_ERROR("Failed to create camera component\n");
+      RCLCPP_ERROR(state->pNode->get_logger(), "Failed to create camera component\n");
       goto error;
    }
 
@@ -1921,7 +1918,7 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
       if (status != MMAL_SUCCESS)
       {
          vcos_log_error("Could not select camera : error %d", status);
-         ROS_ERROR("Could not select camera : error %d", status);
+         RCLCPP_ERROR(state->pNode->get_logger(), "Could not select camera : error %d", status);
          goto error;
       }
    }
@@ -1930,7 +1927,7 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
    {
       status = MMAL_ENOSYS;
       vcos_log_error("Camera doesn't have output ports");
-      ROS_ERROR("Camera doesn't have output ports");
+      RCLCPP_ERROR(state->pNode->get_logger(), "Camera doesn't have output ports");
       goto error;
    }
 
@@ -2027,7 +2024,7 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("camera viewfinder format couldn't be set");
-      ROS_ERROR("camera preview format couldn't be set\n");
+      RCLCPP_ERROR(state->pNode->get_logger(), "camera preview format couldn't be set\n");
       goto error;
    }
 
@@ -2067,7 +2064,7 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("camera video format couldn't be set");
-      ROS_ERROR("camera video format couldn't be set\n");
+      RCLCPP_ERROR(state->pNode->get_logger(), "camera video format couldn't be set\n");
       goto error;
    }
 
@@ -2097,7 +2094,7 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("camera still format couldn't be set");
-      ROS_ERROR("camera still format couldn't be set\n");
+      RCLCPP_ERROR(state->pNode->get_logger(), "camera still format couldn't be set\n");
       goto error;
    }
 
@@ -2111,7 +2108,7 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("camera component couldn't be enabled");
-      ROS_ERROR("camera component couldn't be enabled\n");
+      RCLCPP_ERROR(state->pNode->get_logger(), "camera component couldn't be enabled\n");
       goto error;
    }
 
@@ -2181,7 +2178,7 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("Failed to create splitter component");
-      ROS_ERROR("Unable to create image encoder component\n");
+      RCLCPP_ERROR(state->pNode->get_logger(), "Unable to create image encoder component\n");
       goto error;
    }
 
@@ -2189,7 +2186,7 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
    {
       status = MMAL_ENOSYS;
       vcos_log_error("Splitter doesn't have any input port");
-      ROS_ERROR("Video splitter doesn't have input ports\n");
+      RCLCPP_ERROR(state->pNode->get_logger(), "Video splitter doesn't have input ports\n");
       goto error;
    }
 
@@ -2197,7 +2194,7 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
    {
       status = MMAL_ENOSYS;
       vcos_log_error("Splitter doesn't have enough output ports");
-      ROS_ERROR("Video splitter doesn't have enough output ports: %d\n", splitter->output_num);
+      RCLCPP_ERROR(state->pNode->get_logger(), "Video splitter doesn't have enough output ports: %d\n", splitter->output_num);
       goto error;
    }
 
@@ -2212,7 +2209,7 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("Unable to set format on splitter input port");
-      ROS_ERROR("Unable to set format on splitter input port\n");
+      RCLCPP_ERROR(state->pNode->get_logger(), "Unable to set format on splitter input port\n");
       goto error;
    }
 
@@ -2242,7 +2239,7 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
          default:
             status = MMAL_EINVAL;
             vcos_log_error("unknown raw output format");
-            ROS_ERROR("unknown raw output format\n");
+            RCLCPP_ERROR(state->pNode->get_logger(), "unknown raw output format\n");
             goto error;
          }
       }
@@ -2252,7 +2249,7 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
       if (status != MMAL_SUCCESS)
       {
          vcos_log_error("Unable to set format on splitter output port %d", i);
-         ROS_ERROR("Unable to enable splitter component\n");
+         RCLCPP_ERROR(state->pNode->get_logger(), "Unable to enable splitter component\n");
          goto error;
       }
    }
@@ -2273,7 +2270,7 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
    if (!pool)
    {
       vcos_log_error("Failed to create buffer header pool for splitter output port %s", splitter_output->name);
-      ROS_ERROR("Failed to create buffer header pool for image encoder output port %s\n", splitter_output->name);
+      RCLCPP_ERROR(state->pNode->get_logger(), "Failed to create buffer header pool for image encoder output port %s\n", splitter_output->name);
    }
 
    state->splitter_pool = pool;
@@ -2334,7 +2331,7 @@ static MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("Unable to create video encoder component");
-    ROS_ERROR("Unable to create video encoder component\n");
+    RCLCPP_ERROR(state->pNode->get_logger(), "Unable to create video encoder component\n");
       goto error;
    }
 
@@ -2342,7 +2339,7 @@ static MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
    {
       status = MMAL_ENOSYS;
       vcos_log_error("Video encoder doesn't have input/output ports");
-      ROS_ERROR("Video encoder doesn't have input/output ports\n");
+      RCLCPP_ERROR(state->pNode->get_logger(), "Video encoder doesn't have input/output ports\n");
       goto error;
    }
 
@@ -2410,7 +2407,7 @@ static MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("Unable to set format on video encoder output port");
-      ROS_ERROR("Unable to set format on video encoder output port\n");
+      RCLCPP_ERROR(state->pNode->get_logger(), "Unable to set format on video encoder output port\n");
       goto error;
    }
 
@@ -2586,7 +2583,7 @@ static MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
    if (status != MMAL_SUCCESS)
    {
       vcos_log_error("Unable to enable video encoder component");
-      ROS_ERROR("Unable to enable video encoder component\n");
+      RCLCPP_ERROR(state->pNode->get_logger(), "Unable to enable video encoder component\n");
       goto error;
    }
 
@@ -2596,7 +2593,7 @@ static MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
    if (!pool)
    {
       vcos_log_error("Failed to create buffer header pool for encoder output port %s", encoder_output->name);
-      ROS_ERROR("Failed to create buffer header pool for video encoder output port %s\n", encoder_output->name);
+      RCLCPP_ERROR(state->pNode->get_logger(), "Failed to create buffer header pool for video encoder output port %s\n", encoder_output->name);
    }
 
    state->encoder_pool = pool;
@@ -2849,7 +2846,7 @@ int close_cam(RASPIVID_STATE& state)
 
    if (state.common_settings.verbose)
       fprintf(stderr, "Close down completed, all components disconnected, disabled and destroyed\n\n");
-   ROS_INFO("Video capture stopped\n");
+   RCLCPP_INFO(state.pNode->get_logger(), "Video capture stopped\n");
 
 //   // Destroy image encoder port connection
 //   state.image_encoder_connection.reset(nullptr);
@@ -2868,17 +2865,17 @@ int close_cam(RASPIVID_STATE& state)
 int start_capture(RASPIVID_STATE& state)
 {
   if (!(state.isInit))
-    ROS_FATAL("Tried to start capture before camera is initialized\n");
+    RCLCPP_FATAL(state.pNode->get_logger(), "Tried to start capture before camera is initialized\n");
   
   MMAL_PORT_T* camera_video_port = state.camera_component->output[mmal::camera_port::video];
   //MMAL_PORT_T* image_encoder_output_port = state.image_encoder_component->output[0];
   MMAL_PORT_T* video_encoder_output_port = state.video_encoder_component->output[0];
   MMAL_PORT_T* splitter_output_raw = state.splitter_component->output[1];
-  ROS_INFO("Starting video capture (%d, %d, %d, %d)\n", state.common_settings.width, state.common_settings.height, state.quality, state.framerate);
+  RCLCPP_INFO(state.pNode->get_logger(), "Starting video capture (%d, %d, %d, %d)\n", state.common_settings.width, state.common_settings.height, state.quality, state.framerate);
 
   if (mmal_port_parameter_set_boolean(camera_video_port, MMAL_PARAMETER_CAPTURE, 1) != MMAL_SUCCESS)
   {
-    ROS_FATAL("Could not start video port capture.");
+    RCLCPP_FATAL(state.pNode->get_logger(), "Could not start video port capture.");
     return 1;
   }
   // Send all the buffers to the image encoder output port
@@ -2891,12 +2888,12 @@ int start_capture(RASPIVID_STATE& state)
 
    //    if (!buffer) {
    //      vcos_log_error("Unable to get a required buffer %d from pool queue", q);
-   //      ROS_ERROR("Unable to get a required buffer %d from pool queue", q);
+   //      RCLCPP_ERROR(state.pNode->get_logger(), "Unable to get a required buffer %d from pool queue", q);
    //    }
 
    //    if (mmal_port_send_buffer(image_encoder_output_port, buffer) != MMAL_SUCCESS) {
    //      vcos_log_error("Unable to send a buffer to image encoder output port (%d)", q);
-   //      ROS_ERROR("Unable to send a buffer to image encoder output port (%d)", q);
+   //      RCLCPP_ERROR(state.pNode->get_logger(), "Unable to send a buffer to image encoder output port (%d)", q);
    //    }
    //  }
   }
@@ -2912,13 +2909,13 @@ int start_capture(RASPIVID_STATE& state)
       if (!buffer)
       {
         vcos_log_error("Unable to get a required buffer %d from pool queue", q);
-        ROS_ERROR("Unable to get a required buffer %d from pool queue", q);
+        RCLCPP_ERROR(state.pNode->get_logger(), "Unable to get a required buffer %d from pool queue", q);
       }
 
       if (mmal_port_send_buffer(video_encoder_output_port, buffer) != MMAL_SUCCESS) 
       {
         vcos_log_error("Unable to send a buffer to video encoder output port (%d)", q);
-        ROS_ERROR("Unable to send a buffer to video encoder output port (%d)", q);
+        RCLCPP_ERROR(state.pNode->get_logger(), "Unable to send a buffer to video encoder output port (%d)", q);
       }
     }
   }
@@ -2935,25 +2932,22 @@ int start_capture(RASPIVID_STATE& state)
       if (!buffer)
       {
         vcos_log_error("Unable to get a required buffer %d from pool queue", q);
-        ROS_ERROR("Unable to get a required buffer %d from pool queue", q);
+        RCLCPP_ERROR(state.pNode->get_logger(), "Unable to get a required buffer %d from pool queue", q);
       }
 
       if (mmal_port_send_buffer(splitter_output_raw, buffer) != MMAL_SUCCESS) 
       {
         vcos_log_error("Unable to send a buffer to splitter output port (%d)", q);
-        ROS_ERROR("Unable to send a buffer to splitter output port (%d)", q);
+        RCLCPP_ERROR(state.pNode->get_logger(), "Unable to send a buffer to splitter output port (%d)", q);
       }
     }
   }
-  ROS_INFO("Video capture started\n");
+  RCLCPP_INFO(state.pNode->get_logger(), "Video capture started\n");
   return 0;
 }
 
 int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t cb_compressed, buffer_callback_t cb_motion)
 {
-  int argc=2;
-  const char *argv[2] = {"raspivid", "-d"};
-
    int exit_code = EX_OK;
 
    MMAL_STATUS_T status = MMAL_SUCCESS;
@@ -2984,25 +2978,13 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
    // Register our application with the logging system
    vcos_log_register("RaspiVid", VCOS_LOG_CATEGORY);
 
-//   signal(SIGINT, default_signal_handler);
-
-   // Disable USR1 for the moment - may be reenabled if go in to signal capture mode
-//   signal(SIGUSR1, SIG_IGN);
-
    set_app_name("Raspicam_node");
 
    //already called in RasPiCamPublisher
    //default_status(&state);
 
-   // Parse the command line and put options in to our status structure
-   if (parse_cmdline(argc, argv, &state))
-   {
-      status = (MMAL_STATUS_T)(-1);
-      exit(EX_USAGE);
-   }
-
    if (state.timeout == -1)
-      state.timeout = 5000;
+      state.timeout = 10000;
 
    // Setup for sensor specific parameters, only set W/H settings if zero on entry
    get_sensor_defaults(state.common_settings.cameraNum, state.common_settings.camera_name,
@@ -3025,7 +3007,7 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
    if ((status = create_camera_component(&state)) != MMAL_SUCCESS)
    {
       vcos_log_error("%s: Failed to create camera component", __func__);
-      ROS_ERROR("%s: Failed to create camera component\n", __func__);
+      RCLCPP_ERROR(state.pNode->get_logger(), "%s: Failed to create camera component\n", __func__);
       exit_code = EX_SOFTWARE;
    }
    else if ((status = raspipreview_create(&state.preview_parameters)) != MMAL_SUCCESS)
@@ -3208,119 +3190,90 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
          //return 0;
          //************************************************************************
          vcos_log_error("RUNNING IN %s MODE", state.demoMode ? "DEMO": "REGULAR" );
-         // if (state.demoMode)
-         // {
-         //    // Run for the user specific time..
-         //    int num_iterations = state.timeout / state.demoInterval;
-         //    int i;
-
-         //    if (state.common_settings.verbose)
-         //       fprintf(stderr, "Running in demo mode\n");
-
-         //    for (i=0; state.timeout == 0 || i<num_iterations; i++)
-         //    {
-         //       raspicamcontrol_cycle_test(state.camera_component);
-         //       vcos_sleep(state.demoInterval);
-         //    }
-         // }
-         // else
          {
-            // {
-               int running = 1;
+            int running = 1;
 
-               // Send all the buffers to the encoder output port
-               // if (state.callback_data.file_handle)
+            // Send all the buffers to the encoder output port
+            // if (state.callback_data.file_handle)
+            {
+               int num = mmal_queue_length(state.encoder_pool->queue);
+               int q;
+               for (q=0; q<num; q++)
                {
-                  int num = mmal_queue_length(state.encoder_pool->queue);
-                  int q;
-                  for (q=0; q<num; q++)
-                  {
-                     MMAL_BUFFER_HEADER_T *buffer = mmal_queue_get(state.encoder_pool->queue);
+                  MMAL_BUFFER_HEADER_T *buffer = mmal_queue_get(state.encoder_pool->queue);
 
-                     if (!buffer)
-                        vcos_log_error("Unable to get a required buffer %d from pool queue", q);
+                  if (!buffer)
+                     vcos_log_error("Unable to get a required buffer %d from pool queue", q);
 
-                     if (mmal_port_send_buffer(encoder_output_port, buffer)!= MMAL_SUCCESS)
-                        vcos_log_error("Unable to send a buffer to encoder output port (%d)", q);
-                  }
+                  if (mmal_port_send_buffer(encoder_output_port, buffer)!= MMAL_SUCCESS)
+                     vcos_log_error("Unable to send a buffer to encoder output port (%d)", q);
                }
+            }
 
-               // Send all the buffers to the splitter output port
+            // Send all the buffers to the splitter output port
 //               if (state.callback_data.raw_file_handle)
+            {
+               int num = mmal_queue_length(state.splitter_pool->queue);
+               int q;
+               for (q = 0; q < num; q++)
                {
-                  int num = mmal_queue_length(state.splitter_pool->queue);
-                  int q;
-                  for (q = 0; q < num; q++)
-                  {
-                     MMAL_BUFFER_HEADER_T *buffer = mmal_queue_get(state.splitter_pool->queue);
+                  MMAL_BUFFER_HEADER_T *buffer = mmal_queue_get(state.splitter_pool->queue);
 
-                     if (!buffer)
-                        vcos_log_error("Unable to get a required buffer %d from pool queue", q);
+                  if (!buffer)
+                     vcos_log_error("Unable to get a required buffer %d from pool queue", q);
 
-                     if (mmal_port_send_buffer(splitter_output_port, buffer)!= MMAL_SUCCESS)
-                        vcos_log_error("Unable to send a buffer to splitter output port (%d)", q);
-                  }
+                  if (mmal_port_send_buffer(splitter_output_port, buffer)!= MMAL_SUCCESS)
+                     vcos_log_error("Unable to send a buffer to splitter output port (%d)", q);
+               }
+            }
+
+            int initialCapturing=state.bCapturing;
+            while (running)
+            {
+               // Change state
+
+               state.bCapturing = !state.bCapturing;
+
+               if (mmal_port_parameter_set_boolean(camera_video_port, MMAL_PARAMETER_CAPTURE, state.bCapturing) != MMAL_SUCCESS)
+               {
+                  // How to handle?
                }
 
-               int initialCapturing=state.bCapturing;
-               while (running)
-               {
-                  // Change state
-
-                  state.bCapturing = !state.bCapturing;
-
-                  if (mmal_port_parameter_set_boolean(camera_video_port, MMAL_PARAMETER_CAPTURE, state.bCapturing) != MMAL_SUCCESS)
-                  {
-                     // How to handle?
-                  }
-
-                  // // In circular buffer mode, exit and save the buffer (make sure we do this after having paused the capture
-                  // if(state.bCircularBuffer && !state.bCapturing)
-                  // {
-                  //    break;
-                  // }
-
-                  if (state.common_settings.verbose)
-                  {
-                     if (state.bCapturing)
-                        fprintf(stderr, "Starting video capture\n");
-                     else
-                        fprintf(stderr, "Pausing video capture\n");
-                  }
-
-                  if(state.splitWait)
-                  {
-                     if(state.bCapturing)
-                     {
-                        if (mmal_port_parameter_set_boolean(encoder_output_port, MMAL_PARAMETER_VIDEO_REQUEST_I_FRAME, 1) != MMAL_SUCCESS)
-                        {
-                           vcos_log_error("failed to request I-FRAME");
-                        }
-                     }
-                     else
-                     {
-                        if(!initialCapturing)
-                           state.splitNow=1;
-                     }
-                     initialCapturing=0;
-                  }
-                  running = wait_for_next_change(&state);
-               }
+               // // In circular buffer mode, exit and save the buffer (make sure we do this after having paused the capture
+               // if(state.bCircularBuffer && !state.bCapturing)
+               // {
+               //    break;
+               // }
 
                if (state.common_settings.verbose)
-                  fprintf(stderr, "Finished capture\n");
-            // }
-            // else
-            // {
-            //    if (state.timeout)
-            //       vcos_sleep(state.timeout);
-            //    else
-            //    {
-            //       // timeout = 0 so run forever
-            //       while(1)
-            //          vcos_sleep(ABORT_INTERVAL);
-            //    }
-            // }
+               {
+                  if (state.bCapturing)
+                     fprintf(stderr, "Starting video capture\n");
+                  else
+                     fprintf(stderr, "Pausing video capture\n");
+               }
+
+               if(state.splitWait)
+               {
+                  if(state.bCapturing)
+                  {
+                     if (mmal_port_parameter_set_boolean(encoder_output_port, MMAL_PARAMETER_VIDEO_REQUEST_I_FRAME, 1) != MMAL_SUCCESS)
+                     {
+                        vcos_log_error("failed to request I-FRAME");
+                     }
+                  }
+                  else
+                  {
+                     if(!initialCapturing)
+                        state.splitNow=1;
+                  }
+                  initialCapturing=0;
+               }
+               running = wait_for_next_change(&state);
+            }
+
+            if (state.common_settings.verbose)
+               fprintf(stderr, "Finished capture\n");
          }
       }
       else

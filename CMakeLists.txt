@@ -34,7 +34,25 @@ FIND_LIBRARY(bcmhost_LIBS REQUIRED NAMES bcm_host PATHS /opt/vc/lib)
 
 include_directories(include /opt/vc/include)
 
-add_library(raspicam_common STATIC
+#add_library(raspicam_common STATIC
+#    src/RaspiCamControl.c
+#    src/RaspiCLI.c
+#    src/RaspiPreview.c
+#    src/RaspiCommonSettings.c
+#    src/RaspiHelpers.c
+#    src/RaspiGPS.c
+#    src/libgps_loader.c
+#)
+
+#target_link_libraries(raspicam_common ${bcmhost_LIBS} ${vcos_LIBS} ${mmal_LIBS} ${mmalcore_LIBS} ${mmalutil_LIBS} ${mmalvcclient_LIBS})
+
+#add_library(raspicam SHARED src/raspicam.cpp)
+#target_link_libraries(raspicam raspicam_common)
+
+# composable ros node
+add_library(RasPiCamPublisherNode SHARED
+    src/raspicam.cpp
+    src/RasPiCamPublisherNode.cpp
     src/RaspiCamControl.c
     src/RaspiCLI.c
     src/RaspiPreview.c
@@ -44,22 +62,17 @@ add_library(raspicam_common STATIC
     src/libgps_loader.c
 )
 
-target_link_libraries(raspicam_common ${bcmhost_LIBS} ${vcos_LIBS} ${mmal_LIBS} ${mmalcore_LIBS} ${mmalutil_LIBS} ${mmalvcclient_LIBS})
-
-add_library(raspicam SHARED src/raspicam.cpp)
-target_link_libraries(raspicam raspicam_common)
-
-# composable ros node
-add_library(RasPiCamPublisherNode SHARED src/RasPiCamPublisherNode.cpp)
 ament_target_dependencies(RasPiCamPublisherNode rclcpp rclcpp_components sensor_msgs class_loader)
-target_link_libraries(RasPiCamPublisherNode raspicam)
+#target_link_libraries(RasPiCamPublisherNode raspicam)
+target_link_libraries(RasPiCamPublisherNode ${bcmhost_LIBS} ${vcos_LIBS} ${mmal_LIBS} ${mmalcore_LIBS} ${mmalutil_LIBS} ${mmalvcclient_LIBS})
 rclcpp_components_register_nodes(RasPiCamPublisherNode "RasPiCamPublisher")
 
 add_executable(raspicam2_node src/raspicam2_node.cpp)
 target_link_libraries(raspicam2_node RasPiCamPublisherNode)
 
 install(TARGETS
-    RasPiCamPublisherNode raspicam
+#    RasPiCamPublisherNode raspicam
+    RasPiCamPublisherNode
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin

@@ -42,6 +42,10 @@ typedef std::function<void(const uint8_t*, const uint8_t*)> buffer_callback_t;
 //FROM raspivid
 // Forward
 struct RASPIVID_STATE;
+namespace rclcpp
+{
+  class Node;
+}
 
 typedef struct MMAL_PORT_USERDATA_T {
   MMAL_PORT_USERDATA_T(RASPIVID_STATE* state) : pstate(state){};
@@ -98,7 +102,8 @@ struct RASPIVID_STATE {
     , image_encoder_pool(nullptr, mmal::default_delete_pool)
     , video_encoder_pool(nullptr, mmal::default_delete_pool)
     {}
-
+  rclcpp::Node *pNode = nullptr;
+  
 //   RASPICOMMONSETTINGS_PARAMETERS common_settings;     /// Common settings
   bool isInit;
   //int width;      /// Requested width of image

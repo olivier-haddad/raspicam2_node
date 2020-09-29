@@ -2842,9 +2842,76 @@ int start_capture(RASPIVID_STATE& state)
   
   MMAL_PORT_T* camera_video_port = state.camera_component->output[mmal::camera_port::video];
   //MMAL_PORT_T* image_encoder_output_port = state.image_encoder_component->output[0];
-  MMAL_PORT_T* video_encoder_output_port = state.video_encoder_component->output[0];
-  MMAL_PORT_T* splitter_output_raw = state.splitter_component->output[1];
-  RCLCPP_INFO(state.pNode->get_logger(), "Starting video capture (%d, %d, %d, %d)", state.common_settings.width, state.common_settings.height, state.quality, state.framerate);
+  //video_encoder_output_port
+  MMAL_PORT_T* encoder_output_port = state.encoder_component->output[0];
+//  MMAL_PORT_T* splitter_output_raw = state.splitter_component->output[SPLITTER_OUTPUT_PORT];
+  MMAL_PORT_T* splitter_output_port = state.splitter_component->output[SPLITTER_OUTPUT_PORT];
+  RCLCPP_ERROR(state.pNode->get_logger(), "Starting video capture (%d, %d, %d, %d)", state.common_settings.width, state.common_settings.height, state.quality, state.framerate);
+
+         {
+            int running = 1;
+
+            // Send all the buffers to the encoder output port
+            // if (state.callback_data.file_handle)
+            {
+               int num = mmal_queue_length(state.encoder_pool->queue);
+               int q;
+               for (q=0; q<num; q++)
+               {
+                  MMAL_BUFFER_HEADER_T *buffer = mmal_queue_get(state.encoder_pool->queue);
+
+                  if (!buffer)
+                     vcos_log_error("Unable to get a required buffer %d from pool queue", q);
+
+                  if (mmal_port_send_buffer(encoder_output_port, buffer)!= MMAL_SUCCESS)
+                     vcos_log_error("Unable to send a buffer to encoder output port (%d)", q);
+               }
+            }
+
+            // Send all the buffers to the splitter output port
+//               if (state.callback_data.raw_file_handle)
+            {
+               int num = mmal_queue_length(state.splitter_pool->queue);
+               int q;
+               for (q = 0; q < num; q++)
+               {
+                  MMAL_BUFFER_HEADER_T *buffer = mmal_queue_get(state.splitter_pool->queue);
+
+                  if (!buffer)
+                     vcos_log_error("Unable to get a required buffer %d from pool queue", q);
+
+                  if (mmal_port_send_buffer(splitter_output_port, buffer)!= MMAL_SUCCESS)
+                     vcos_log_error("Unable to send a buffer to splitter output port (%d)", q);
+               }
+            }
+
+            int initialCapturing=state.bCapturing;
+            while (running)
+            {
+               // Change state
+
+               state.bCapturing = !state.bCapturing;
+
+               if (mmal_port_parameter_set_boolean(camera_video_port, MMAL_PARAMETER_CAPTURE, state.bCapturing) != MMAL_SUCCESS)
+               {
+                  // How to handle?
+               }
+
+               if (state.common_settings.verbose)
+               {
+                  if (state.bCapturing)
+                     fprintf(stderr, "Starting video capture\n");
+                  else
+                     fprintf(stderr, "Pausing video capture\n");
+               }
+
+               running = wait_for_next_change(&state);
+            }
+
+            if (state.common_settings.verbose)
+               fprintf(stderr, "Finished capture\n");
+         }
+         return 0;
 
   // Send all the buffers to the image encoder output port
   {
@@ -2880,7 +2947,7 @@ int start_capture(RASPIVID_STATE& state)
         RCLCPP_ERROR(state.pNode->get_logger(), "Unable to get a required buffer %d from pool queue", q);
       }
 
-      if (mmal_port_send_buffer(video_encoder_output_port, buffer) != MMAL_SUCCESS) 
+      if (mmal_port_send_buffer(encoder_output_port, buffer) != MMAL_SUCCESS) 
       {
         vcos_log_error("Unable to send a buffer to video encoder output port (%d)", q);
         RCLCPP_ERROR(state.pNode->get_logger(), "Unable to send a buffer to video encoder output port (%d)", q);
@@ -2903,7 +2970,7 @@ int start_capture(RASPIVID_STATE& state)
         RCLCPP_ERROR(state.pNode->get_logger(), "Unable to get a required buffer %d from pool queue", q);
       }
 
-      if (mmal_port_send_buffer(splitter_output_raw, buffer) != MMAL_SUCCESS) 
+      if (mmal_port_send_buffer(splitter_output_port, buffer) != MMAL_SUCCESS) 
       {
         vcos_log_error("Unable to send a buffer to splitter output port (%d)", q);
         RCLCPP_ERROR(state.pNode->get_logger(), "Unable to send a buffer to splitter output port (%d)", q);
@@ -3160,7 +3227,7 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
          }
 
          state.isInit = true;
-         //return 0;
+         return 0;
          //************************************************************************
          {
             int running = 1;
@@ -3181,6 +3248,7 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
                      vcos_log_error("Unable to send a buffer to encoder output port (%d)", q);
                }
             }
+            RCLCPP_ERROR(state.pNode->get_logger(), "Buffers sent to encoder output");
 
             // Send all the buffers to the splitter output port
 //               if (state.callback_data.raw_file_handle)
@@ -3198,6 +3266,9 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
                      vcos_log_error("Unable to send a buffer to splitter output port (%d)", q);
                }
             }
+            vcos_log_error("Buffers sent to splitter output");
+            RCLCPP_INFO(state.pNode->get_logger(), "Buffers sent to splitter output");
+            RCLCPP_ERROR(state.pNode->get_logger(), "Buffers sent to splitter output");
 
             int initialCapturing=state.bCapturing;
             while (running)
@@ -3233,7 +3304,8 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
       }
 
 error:
-
+      if (status != MMAL_SUCCESS)
+        fprintf(stderr, "reached ERROR\n");
       mmal_status_to_int(status);
 
       close_cam(state);

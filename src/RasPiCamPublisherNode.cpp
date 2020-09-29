@@ -155,7 +155,7 @@ void RasPiCamPublisher::onImageRaw(const uint8_t* start, const uint8_t* end) {
     //calculating the step, must be for video capture a multiple of 16 (32 for stills)
     uint32_t rounded_width = (uint32_t)(ceil(msg->width/16.0) * 16);//aligned to 16
     msg->step = rounded_width * 3;
-    msg->encoding = "bgr8";
+    msg->encoding = "rgb8";
     msg->data.insert(msg->data.end(), start, end);
     pub_img->publish(std::move(msg));
 

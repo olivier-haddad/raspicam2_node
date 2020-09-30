@@ -56,21 +56,7 @@ typedef struct MMAL_PORT_USERDATA_T {
   int frames_skipped = 0;
 
   buffer_callback_t callback = nullptr;
-  //OH test raspivid
-//{
    RASPIVID_STATE *pstate;              /// pointer to our state in case required in callback
-   char *cb_buff;                       /// Circular buffer
-   int   cb_len;                        /// Length of buffer
-  int   cb_wptr;                       /// Current write pointer
-  int   cb_wrap;                       /// Has buffer wrapped at least once?
-  int   cb_data;                       /// Valid bytes in buffer
-#define IFRAME_BUFSIZE (60*1000)
-   int   iframe_buff[IFRAME_BUFSIZE];          /// buffer of iframe pointers
-   int   iframe_buff_wpos;
-   int   iframe_buff_rpos;
-   char  header_bytes[29];
-   int  header_wptr;
-   int  flush_buffers;
 } PORT_USERDATA;
 
 /** Possible raw output formats
@@ -144,8 +130,6 @@ struct RASPIVID_STATE {
    int intraperiod;                    /// Intra-refresh period (key frame rate)
    int quantisationParameter;          /// Quantisation parameter - quality. Set bitrate 0 and set this for variable bitrate
    int bInlineHeaders;                  /// Insert inline headers to stream (SPS, PPS)
-   int demoMode;                       /// Run app in demo mode
-   int demoInterval;                   /// Interval between camera settings changes
    int immutableInput;                 /// Flag to specify whether encoder works in place or creates a new buffer. Result is preview can display either
    /// the camera output or the encoder output (with compression artifacts)
    int profile;                        /// H264 profile to use for encoding
@@ -154,12 +138,6 @@ struct RASPIVID_STATE {
 
    int onTime;                         /// In timed cycle mode, the amount of time the capture is on per cycle
    int offTime;                        /// In timed cycle mode, the amount of time the capture is off per cycle
-
-   int segmentSize;                    /// Segment mode In timed cycle mode, the amount of time the capture is off per cycle
-   int segmentWrap;                    /// Point at which to wrap segment counter
-   int segmentNumber;                  /// Current segment counter
-   int splitNow;                       /// Split at next possible i-frame if set to 1.
-   int splitWait;                      /// Switch if user wants splited files
 
    RASPIPREVIEW_PARAMETERS preview_parameters;   /// Preview setup parameters
    RASPICAM_CAMERA_PARAMETERS camera_parameters; /// Camera setup parameters
@@ -192,7 +170,6 @@ struct RASPIVID_STATE {
    int64_t starttime;
    int64_t lasttime;
 
-   bool netListen;
    MMAL_BOOL_T addSPSTiming;
    int slices;
 };

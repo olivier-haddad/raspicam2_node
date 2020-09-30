@@ -619,8 +619,6 @@ void default_status(RASPIVID_STATE *state)
    state->framerate = VIDEO_FRAME_RATE_NUM;
    state->intraperiod = -1;    // Not set
    state->quantisationParameter = 0;
-   state->demoMode = 0;
-   state->demoInterval = 250; // ms
    state->immutableInput = 1;
    state->profile = MMAL_VIDEO_PROFILE_H264_HIGH;
    state->level = MMAL_VIDEO_LEVEL_H264_4;
@@ -629,16 +627,10 @@ void default_status(RASPIVID_STATE *state)
    state->offTime = 5000;
    state->bCapturing = 0;
    state->bInlineHeaders = 0;
-   state->segmentSize = 0;  // 0 = not segmenting the file.
-   state->segmentNumber = 1;
-   state->segmentWrap = 0; // Point at which to wrap segment number back to 1. 0 = no wrap
-   state->splitNow = 0;
-   state->splitWait = 0;
    state->inlineMotionVectors = 0;
    state->intra_refresh_type = -1;
    state->frame = 0;
    state->save_pts = 0;
-   state->netListen = false;
    state->addSPSTiming = MMAL_FALSE;
    state->slices = 1;
    state->raw_output = false;
@@ -711,10 +703,6 @@ static void dump_status(RASPIVID_STATE *state)
    fprintf(stderr, "H264 Fill SPS Timings %s\n", state->addSPSTiming ? "Yes" : "No");
    fprintf(stderr, "H264 Intra refresh type %s, period %d\n", raspicli_unmap_xref(state->intra_refresh_type, intra_refresh_map, intra_refresh_map_size), state->intraperiod);
    fprintf(stderr, "H264 Slices %d\n", state->slices);
-
-   // Not going to display segment data unless asked for it.
-   if (state->segmentSize)
-      fprintf(stderr, "Segment size %d, segment wrap value %d, initial segment number %d\n", state->segmentSize, state->segmentWrap, state->segmentNumber);
 
    if (state->raw_output)
       fprintf(stderr, "Raw output enabled, format %s\n", raspicli_unmap_xref(state->raw_output_fmt, raw_output_fmt_map, raw_output_fmt_map_size));
@@ -1735,135 +1723,6 @@ static void destroy_encoder_component(RASPIVID_STATE *state)
    }
 }
 
-/**
- * Pause for specified time, but return early if detect an abort request
- *
- * @param state Pointer to state control struct
- * @param pause Time in ms to pause
- * @param callback Struct contain an abort flag tested for early termination
- *
- */
-static int pause_and_test_abort(RASPIVID_STATE *state, int pause)
-{
-   int wait;
-
-   if (!pause)
-      return 0;
-
-   // Going to check every ABORT_INTERVAL milliseconds
-   for (wait = 0; wait < pause; wait+= ABORT_INTERVAL)
-   {
-      vcos_sleep(ABORT_INTERVAL);
-      if (state->abort)
-         return 1;
-   }
-
-   return 0;
-}
-
-
-/**
- * Function to wait in various ways (depending on settings)
- *
- * @param state Pointer to the state data
- *
- * @return !0 if to continue, 0 if reached end of run
- */
-static int wait_for_next_change(RASPIVID_STATE *state)
-{
-   int keep_running = 1;
-   static int64_t complete_time = -1;
-
-   // Have we actually exceeded our timeout?
-   int64_t current_time =  get_microseconds64()/1000;
-
-   if (complete_time == -1)
-      complete_time =  current_time + state->timeout;
-
-   // if we have run out of time, flag we need to exit
-   if (current_time >= complete_time && state->timeout != 0)
-   {
-      RCLCPP_ERROR(state->pNode->get_logger(), "Time reached, aborting...");
-      keep_running = 0;
-   }
-
-   switch (state->waitMethod)
-   {
-   case WAIT_METHOD_NONE:
-      (void)pause_and_test_abort(state, state->timeout);
-      return 0;
-
-   case WAIT_METHOD_FOREVER:
-   {
-      // We never return from this. Expect a ctrl-c to exit or abort.
-      while (!state->abort)
-         // Have a sleep so we don't hog the CPU.
-         vcos_sleep(ABORT_INTERVAL);
-
-      return 0;
-   }
-
-   case WAIT_METHOD_TIMED:
-   {
-      int abort;
-
-      if (state->bCapturing)
-         abort = pause_and_test_abort(state, state->onTime);
-      else
-         abort = pause_and_test_abort(state, state->offTime);
-
-      if (abort)
-         return 0;
-      else
-         return keep_running;
-   }
-
-   case WAIT_METHOD_KEYPRESS:
-   {
-      char ch;
-
-      if (state->common_settings.verbose)
-         fprintf(stderr, "Press Enter to %s, X then ENTER to exit, [i,o,r] then ENTER to change zoom\n", state->bCapturing ? "pause" : "capture");
-
-      ch = getchar();
-      if (ch == 'x' || ch == 'X')
-         return 0;
-
-      return keep_running;
-   }
-
-
-   case WAIT_METHOD_SIGNAL:
-   {
-      // Need to wait for a SIGUSR1 signal
-      sigset_t waitset;
-      int sig;
-      int result = 0;
-
-      sigemptyset( &waitset );
-      sigaddset( &waitset, SIGUSR1 );
-
-      // We are multi threaded because we use mmal, so need to use the pthread
-      // variant of procmask to block SIGUSR1 so we can wait on it.
-      pthread_sigmask( SIG_BLOCK, &waitset, NULL );
-
-      if (state->common_settings.verbose)
-      {
-         fprintf(stderr, "Waiting for SIGUSR1 to %s\n", state->bCapturing ? "pause" : "capture");
-      }
-
-      result = sigwait( &waitset, &sig );
-
-      if (state->common_settings.verbose && result != 0)
-         fprintf(stderr, "Bad signal received - error %d\n", errno);
-
-      return keep_running;
-   }
-
-   } // switch
-
-   return keep_running;
-}
 
 int close_cam(RASPIVID_STATE& state) 
 {
@@ -1947,7 +1806,7 @@ int start_capture(RASPIVID_STATE& state)
   MMAL_PORT_T* encoder_output_port = state.encoder_component->output[0];
 //  MMAL_PORT_T* splitter_output_raw = state.splitter_component->output[SPLITTER_OUTPUT_PORT];
   MMAL_PORT_T* splitter_output_port = state.splitter_component->output[SPLITTER_OUTPUT_PORT];
-  RCLCPP_ERROR(state.pNode->get_logger(), "Starting video capture (%d, %d, %d, %d)", state.common_settings.width, state.common_settings.height, state.quality, state.framerate);
+  RCLCPP_INFO(state.pNode->get_logger(), "Starting video capture (%d, %d, %d, %d)", state.common_settings.width, state.common_settings.height, state.quality, state.framerate);
 
   // Send all the buffers to the image encoder output port
   {

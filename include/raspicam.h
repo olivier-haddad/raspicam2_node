@@ -97,10 +97,10 @@ struct RASPIVID_STATE {
     //, splitter_connection(nullptr)
     , image_encoder_connection(nullptr)
     , video_encoder_connection(nullptr)
-    , preview_connection(nullptr)
     //, splitter_pool(nullptr, mmal::default_delete_pool)
     , image_encoder_pool(nullptr, mmal::default_delete_pool)
     , video_encoder_pool(nullptr, mmal::default_delete_pool)
+    , preview_connection(nullptr)
     {}
   rclcpp::Node *pNode = nullptr;
   
@@ -202,71 +202,6 @@ struct RASPIVID_STATE {
  * @param state state structure to assign defaults to
  */
 void default_status(RASPIVID_STATE *state);
-
-/**
- *  buffer header callback function for image encoder
- *
- *  Callback will dump buffer data to the specific file
- *
- * @param port Pointer to port from which callback originated
- * @param buffer mmal buffer header pointer
- */
-static void image_encoder_buffer_callback(MMAL_PORT_T* port, MMAL_BUFFER_HEADER_T* buffer);
-
-/**
- *  buffer header callback function for video encoder
- *
- *  Callback will dump buffer data to the specific file
- *
- * @param port Pointer to port from which callback originated
- * @param buffer mmal buffer header pointer
- */
-static void video_encoder_buffer_callback(MMAL_PORT_T* port, MMAL_BUFFER_HEADER_T* buffer);
-
-static void splitter_buffer_callback(MMAL_PORT_T* port, MMAL_BUFFER_HEADER_T* buffer);
-
-/**
- * Create the image encoder component, set up its ports
- *
- * @param state Pointer to state control struct
- *
- * @return MMAL_SUCCESS if all OK, something else otherwise
- *
- */
-static MMAL_STATUS_T create_image_encoder_component(RASPIVID_STATE& state);
-
-/**
- * Create the video encoder component, set up its ports
- *
- * @param state Pointer to state control struct
- *
- * @return MMAL_SUCCESS if all OK, something else otherwise
- *
- */
-//static MMAL_STATUS_T create_video_encoder_component(RASPIVID_STATE& state);
-
-/**
- * Create the splitter component, set up its ports
- *
- * @param state Pointer to state control struct
- *
- * @return MMAL_SUCCESS if all OK, something else otherwise
- *
- */
-//static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE& state);
-
-/**
- * Connect two specific ports together
- *
- * @param output_port Pointer the output port
- * @param input_port Pointer the input port
- * @param Pointer to a mmal connection pointer, reassigned if function
- * successful
- * @return Returns a MMAL_STATUS_T giving result of operation
- *
- */
-static MMAL_STATUS_T connect_ports(MMAL_PORT_T* output_port, MMAL_PORT_T* input_port,
-                                   mmal::connection_ptr& connection);
 
 /**
  * init_cam

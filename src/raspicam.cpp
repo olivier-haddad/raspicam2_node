@@ -684,7 +684,6 @@ void default_status(RASPIVID_STATE *state)
    memset(state, 0, sizeof(RASPIVID_STATE));
 
    state->isInit=false;
-   raspicommonsettings_set_defaults(&state->common_settings);
 
    // Now set anything non-zero
    state->timeout = -1; // replaced with 5000ms later if unset
@@ -720,6 +719,7 @@ void default_status(RASPIVID_STATE *state)
    state->raw_output = false;
    state->raw_output_fmt = RAW_OUTPUT_FMT_RGB;
 
+   raspicommonsettings_set_defaults(&state->common_settings);
 
    // Setup preview window defaults
    raspipreview_set_defaults(&state->preview_parameters);

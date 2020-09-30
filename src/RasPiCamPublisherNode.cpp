@@ -1,5 +1,40 @@
 #include <RasPiCamPublisherNode.hpp>
-//#include <rclcpp/logging.hpp>
+
+extern "C" {
+#include "RaspiCLI.h"
+} // C header
+
+static XREF_T  exposureMode_map[] =
+{
+    {"auto", MMAL_PARAM_EXPOSUREMODE_AUTO},
+    {"night", MMAL_PARAM_EXPOSUREMODE_NIGHT},
+    {"nightpreview", MMAL_PARAM_EXPOSUREMODE_NIGHTPREVIEW},
+    {"backlight", MMAL_PARAM_EXPOSUREMODE_BACKLIGHT},
+    {"spotlight", MMAL_PARAM_EXPOSUREMODE_SPOTLIGHT},
+    {"sports", MMAL_PARAM_EXPOSUREMODE_SPORTS},
+    {"snow", MMAL_PARAM_EXPOSUREMODE_SNOW},
+    {"beach", MMAL_PARAM_EXPOSUREMODE_BEACH},
+    {"verylong", MMAL_PARAM_EXPOSUREMODE_VERYLONG},
+    {"fixedfps", MMAL_PARAM_EXPOSUREMODE_FIXEDFPS},
+    {"antishake", MMAL_PARAM_EXPOSUREMODE_ANTISHAKE},
+    {"fireworks", MMAL_PARAM_EXPOSUREMODE_FIREWORKS},
+};
+static int exposureMode_map_size = sizeof(exposureMode_map) / sizeof(exposureMode_map[0]);
+
+static XREF_T  awbMode_map[] =
+{
+    {"off",           MMAL_PARAM_AWBMODE_OFF},
+    {"auto",          MMAL_PARAM_AWBMODE_AUTO},
+    {"sunlight",      MMAL_PARAM_AWBMODE_SUNLIGHT},
+    {"cloudy",        MMAL_PARAM_AWBMODE_CLOUDY},
+    {"shade",         MMAL_PARAM_AWBMODE_SHADE},
+    {"tungsten",      MMAL_PARAM_AWBMODE_TUNGSTEN},
+    {"fluorescent",   MMAL_PARAM_AWBMODE_FLUORESCENT},
+    {"incandescent",  MMAL_PARAM_AWBMODE_INCANDESCENT},
+    {"flash",         MMAL_PARAM_AWBMODE_FLASH},
+    {"horizon",       MMAL_PARAM_AWBMODE_HORIZON},
+};
+static int awbMode_map_size = sizeof(awbMode_map) / sizeof(awbMode_map[0]);
 
 RasPiCamPublisher::RasPiCamPublisher(rclcpp::NodeOptions options)
   : Node("raspicam2", "camera", options.use_intra_process_comms(true)) 
@@ -84,31 +119,8 @@ RasPiCamPublisher::RasPiCamPublisher(rclcpp::NodeOptions options)
 
     get_parameter_or<std::string>("exposureMode", paramValue, "auto");
     std::transform(paramValue.begin(), paramValue.end(), paramValue.begin(), [](unsigned char c){ return std::tolower(c); });
-    if(!paramValue.compare("auto"))
-        state->camera_parameters.exposureMode = MMAL_PARAM_EXPOSUREMODE_AUTO;
-    else if(!paramValue.compare("night"))
-        state->camera_parameters.exposureMode = MMAL_PARAM_EXPOSUREMODE_NIGHT;
-    else if(!paramValue.compare("nightpreview"))
-        state->camera_parameters.exposureMode = MMAL_PARAM_EXPOSUREMODE_NIGHTPREVIEW;
-    else if(!paramValue.compare("backlight"))
-        state->camera_parameters.exposureMode = MMAL_PARAM_EXPOSUREMODE_BACKLIGHT;
-    else if(!paramValue.compare("spotlight"))
-        state->camera_parameters.exposureMode = MMAL_PARAM_EXPOSUREMODE_SPOTLIGHT;
-    else if(!paramValue.compare("sports"))
-        state->camera_parameters.exposureMode = MMAL_PARAM_EXPOSUREMODE_SPORTS;
-    else if(!paramValue.compare("snow"))
-        state->camera_parameters.exposureMode = MMAL_PARAM_EXPOSUREMODE_SNOW;
-    else if(!paramValue.compare("beach"))
-        state->camera_parameters.exposureMode = MMAL_PARAM_EXPOSUREMODE_BEACH;
-    else if(!paramValue.compare("verylong"))
-        state->camera_parameters.exposureMode = MMAL_PARAM_EXPOSUREMODE_VERYLONG;
-    else if(!paramValue.compare("fixedfps"))
-        state->camera_parameters.exposureMode = MMAL_PARAM_EXPOSUREMODE_FIXEDFPS;
-    else if(!paramValue.compare("antishake"))
-        state->camera_parameters.exposureMode = MMAL_PARAM_EXPOSUREMODE_ANTISHAKE;
-    else if(!paramValue.compare("fireworks"))
-        state->camera_parameters.exposureMode = MMAL_PARAM_EXPOSUREMODE_FIREWORKS;
-    else
+    state->camera_parameters.exposureMode = (MMAL_PARAM_EXPOSUREMODE_T)raspicli_map_xref(paramValue.c_str(), exposureMode_map, exposureMode_map_size);
+    if( state->camera_parameters.exposureMode == -1)
     {
         RCLCPP_FATAL(get_logger(), "Invalid exposureMode " + paramValue);
         exit(1);
@@ -132,30 +144,10 @@ RasPiCamPublisher::RasPiCamPublisher(rclcpp::NodeOptions options)
         exit(1);
     }
 
-    // get_parameter_or("awbMode", state->camera_parameters.awbMode, AUTO);
     get_parameter_or<std::string>("awbMode", paramValue, "auto");
     std::transform(paramValue.begin(), paramValue.end(), paramValue.begin(), [](unsigned char c){ return std::tolower(c); });
-    if(!paramValue.compare("off"))
-        state->camera_parameters.awbMode = MMAL_PARAM_AWBMODE_OFF;
-    else if(!paramValue.compare("auto"))
-        state->camera_parameters.awbMode = MMAL_PARAM_AWBMODE_AUTO;
-    else if(!paramValue.compare("sunlight"))
-        state->camera_parameters.awbMode = MMAL_PARAM_AWBMODE_SUNLIGHT;
-    else if(!paramValue.compare("cloudy"))
-        state->camera_parameters.awbMode = MMAL_PARAM_AWBMODE_CLOUDY;
-    else if(!paramValue.compare("shade"))
-        state->camera_parameters.awbMode = MMAL_PARAM_AWBMODE_SHADE;
-    else if(!paramValue.compare("tungsten"))
-        state->camera_parameters.awbMode = MMAL_PARAM_AWBMODE_TUNGSTEN;
-    else if(!paramValue.compare("fluorescent"))
-        state->camera_parameters.awbMode = MMAL_PARAM_AWBMODE_FLUORESCENT;
-    else if(!paramValue.compare("incandescent"))
-        state->camera_parameters.awbMode = MMAL_PARAM_AWBMODE_INCANDESCENT;
-    else if(!paramValue.compare("flash"))
-        state->camera_parameters.awbMode = MMAL_PARAM_AWBMODE_FLASH;
-    else if(!paramValue.compare("horizon"))
-        state->camera_parameters.awbMode = MMAL_PARAM_AWBMODE_HORIZON;
-    else
+    state->camera_parameters.awbMode = (MMAL_PARAM_AWBMODE_T)raspicli_map_xref(paramValue.c_str(), awbMode_map, awbMode_map_size);
+    if( state->camera_parameters.awbMode == -1)
     {
         RCLCPP_FATAL(get_logger(), "Invalid awbMode " + paramValue);
         exit(1);

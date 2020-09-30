@@ -35,3 +35,4 @@ private:
     void onMotion(const uint8_t* start, const uint8_t* end);
 
 };  // node
+

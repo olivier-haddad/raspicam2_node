@@ -69,9 +69,6 @@ extern "C" {
 } // C header
 
 
-extern "C" {
-} // C header
-
 #include <raspicam.h>
 #include <rclcpp/rclcpp.hpp>
 
@@ -580,76 +577,6 @@ static XREF_T  raw_output_fmt_map[] =
 
 static int raw_output_fmt_map_size = sizeof(raw_output_fmt_map) / sizeof(raw_output_fmt_map[0]);
 
-/// Command ID's and Structure defining our command line options
-enum
-{
-   CommandBitrate,
-   CommandTimeout,
-   CommandDemoMode,
-   CommandFramerate,
-   CommandPreviewEnc,
-   CommandIntraPeriod,
-   CommandProfile,
-   CommandTimed,
-   CommandSignal,
-   CommandKeypress,
-   CommandInitialState,
-   CommandQP,
-   CommandInlineHeaders,
-   CommandSegmentFile,
-   CommandSegmentWrap,
-   CommandSegmentStart,
-   CommandSplitWait,
-   CommandCircular,
-   CommandIMV,
-   CommandIntraRefreshType,
-   CommandFlush,
-   CommandSavePTS,
-   CommandCodec,
-   CommandLevel,
-   CommandRaw,
-   CommandRawFormat,
-   CommandNetListen,
-   CommandSPSTimings,
-   CommandSlices
-};
-
-static COMMAND_LIST cmdline_commands[] =
-{
-   { CommandBitrate,       "-bitrate",    "b",  "Set bitrate. Use bits per second (e.g. 10MBits/s would be -b 10000000)", 1 },
-   { CommandTimeout,       "-timeout",    "t",  "Time (in ms) to capture for. If not specified, set to 5s. Zero to disable", 1 },
-   { CommandDemoMode,      "-demo",       "d",  "Run a demo mode (cycle through range of camera options, no capture)", 1},
-   { CommandFramerate,     "-framerate",  "fps","Specify the frames per second to record", 1},
-   { CommandPreviewEnc,    "-penc",       "e",  "Display preview image *after* encoding (shows compression artifacts)", 0},
-   { CommandIntraPeriod,   "-intra",      "g",  "Specify the intra refresh period (key frame rate/GoP size). Zero to produce an initial I-frame and then just P-frames.", 1},
-   { CommandProfile,       "-profile",    "pf", "Specify H264 profile to use for encoding", 1},
-   { CommandTimed,         "-timed",      "td", "Cycle between capture and pause. -cycle on,off where on is record time and off is pause time in ms", 0},
-   { CommandSignal,        "-signal",     "s",  "Cycle between capture and pause on Signal", 0},
-   { CommandKeypress,      "-keypress",   "k",  "Cycle between capture and pause on ENTER", 0},
-   { CommandInitialState,  "-initial",    "i",  "Initial state. Use 'record' or 'pause'. Default 'record'", 1},
-   { CommandQP,            "-qp",         "qp", "Quantisation parameter. Use approximately 10-40. Default 0 (off)", 1},
-   { CommandInlineHeaders, "-inline",     "ih", "Insert inline headers (SPS, PPS) to stream", 0},
-   { CommandSegmentFile,   "-segment",    "sg", "Segment output file in to multiple files at specified interval <ms>", 1},
-   { CommandSegmentWrap,   "-wrap",       "wr", "In segment mode, wrap any numbered filename back to 1 when reach number", 1},
-   { CommandSegmentStart,  "-start",      "sn", "In segment mode, start with specified segment number", 1},
-   { CommandSplitWait,     "-split",      "sp", "In wait mode, create new output file for each start event", 0},
-   { CommandCircular,      "-circular",   "c",  "Run encoded data through circular buffer until triggered then save", 0},
-   { CommandIMV,           "-vectors",    "x",  "Output filename <filename> for inline motion vectors", 1 },
-   { CommandIntraRefreshType,"-irefresh", "if", "Set intra refresh type", 1},
-   { CommandFlush,         "-flush",      "fl",  "Flush buffers in order to decrease latency", 0 },
-   { CommandSavePTS,       "-save-pts",   "pts","Save Timestamps to file for mkvmerge", 1 },
-   { CommandCodec,         "-codec",      "cd", "Specify the codec to use - H264 (default) or MJPEG", 1 },
-   { CommandLevel,         "-level",      "lev","Specify H264 level to use for encoding", 1},
-   { CommandRaw,           "-raw",        "r",  "Output filename <filename> for raw video", 1 },
-   { CommandRawFormat,     "-raw-format", "rf", "Specify output format for raw video. Default is yuv", 1},
-   { CommandNetListen,     "-listen",     "l", "Listen on a TCP socket", 0},
-   { CommandSPSTimings,    "-spstimings",    "stm", "Add in h.264 sps timings", 0},
-   { CommandSlices   ,     "-slices",     "sl", "Horizontal slices per frame. Default 1 (off)", 1},
-};
-
-static int cmdline_commands_size = sizeof(cmdline_commands) / sizeof(cmdline_commands[0]);
-
-
 static struct
 {
    char *description;
@@ -664,8 +591,6 @@ static struct
 };
 
 static int wait_method_description_size = sizeof(wait_method_description) / sizeof(wait_method_description[0]);
-
-
 
 /**
  * Assign a default set of parameters to the state passed in
@@ -807,520 +732,6 @@ static void dump_status(RASPIVID_STATE *state)
    raspicamcontrol_dump_parameters(&state->camera_parameters);
 }
 
-/**
- * Display usage information for the application to stdout
- *
- * @param app_name String to display as the application name
- */
-static void application_help_message(char *app_name)
-{
-   int i;
-
-   fprintf(stdout, "Display camera output to display, and optionally saves an H264 capture at requested bitrate\n\n");
-   fprintf(stdout, "\nusage: %s [options]\n\n", app_name);
-
-   fprintf(stdout, "Image parameter commands\n\n");
-
-   raspicli_display_help(cmdline_commands, cmdline_commands_size);
-
-   // Profile options
-   fprintf(stdout, "\n\nH264 Profile options :\n%s", profile_map[0].mode );
-
-   for (i=1; i<profile_map_size; i++)
-   {
-      fprintf(stdout, ",%s", profile_map[i].mode);
-   }
-
-   // Level options
-   fprintf(stdout, "\n\nH264 Level options :\n%s", level_map[0].mode );
-
-   for (i=1; i<level_map_size; i++)
-   {
-      fprintf(stdout, ",%s", level_map[i].mode);
-   }
-
-   // Intra refresh options
-   fprintf(stdout, "\n\nH264 Intra refresh options :\n%s", intra_refresh_map[0].mode );
-
-   for (i=1; i<intra_refresh_map_size; i++)
-   {
-      fprintf(stdout, ",%s", intra_refresh_map[i].mode);
-   }
-
-   // Raw output format options
-   fprintf(stdout, "\n\nRaw output format options :\n%s", raw_output_fmt_map[0].mode );
-
-   for (i=1; i<raw_output_fmt_map_size; i++)
-   {
-      fprintf(stdout, ",%s", raw_output_fmt_map[i].mode);
-   }
-
-   fprintf(stdout, "\n\n");
-
-   fprintf(stdout, "Raspivid allows output to a remote IPv4 host e.g. -o tcp://192.168.1.2:1234"
-           "or -o udp://192.168.1.2:1234\n"
-           "To listen on a TCP port (IPv4) and wait for an incoming connection use the -l option\n"
-           "e.g. raspivid -l -o tcp://0.0.0.0:3333 -> bind to all network interfaces,\n"
-           "raspivid -l -o tcp://192.168.1.1:3333 -> bind to a certain local IPv4 port\n");
-
-   return;
-}
-
-/**
- * Parse the incoming command line and put resulting parameters in to the state
- *
- * @param argc Number of arguments in command line
- * @param argv Array of pointers to strings from command line
- * @param state Pointer to state structure to assign any discovered parameters to
- * @return Non-0 if failed for some reason, 0 otherwise
- */
-static int parse_cmdline(int argc, const char **argv, RASPIVID_STATE *state)
-{
-   // Parse the command line arguments.
-   // We are looking for --<something> or -<abbreviation of something>
-
-   int valid = 1;
-   int i;
-
-   for (i = 1; i < argc && valid; i++)
-   {
-      int command_id, num_parameters;
-
-      if (!argv[i])
-         continue;
-
-      if (argv[i][0] != '-')
-      {
-         valid = 0;
-         continue;
-      }
-
-      // Assume parameter is valid until proven otherwise
-      valid = 1;
-
-      command_id = raspicli_get_command_id(cmdline_commands, cmdline_commands_size, &argv[i][1], &num_parameters);
-
-      // If we found a command but are missing a parameter, continue (and we will drop out of the loop)
-      if (command_id != -1 && num_parameters > 0 && (i + 1 >= argc) )
-         continue;
-
-      //  We are now dealing with a command line option
-      switch (command_id)
-      {
-      case CommandBitrate: // 1-100
-         if (sscanf(argv[i + 1], "%u", &state->bitrate) == 1)
-         {
-            i++;
-         }
-         else
-            valid = 0;
-
-         break;
-
-      case CommandTimeout: // Time to run viewfinder/capture
-      {
-         if (sscanf(argv[i + 1], "%d", &state->timeout) == 1)
-         {
-            // Ensure that if previously selected a waitMethod we don't overwrite it
-            if (state->timeout == 0 && state->waitMethod == WAIT_METHOD_NONE)
-               state->waitMethod = WAIT_METHOD_FOREVER;
-
-            i++;
-         }
-         else
-            valid = 0;
-         break;
-      }
-
-      case CommandDemoMode: // Run in demo mode - no capture
-      {
-         // Demo mode might have a timing parameter
-         // so check if a) we have another parameter, b) its not the start of the next option
-         if (i + 1 < argc  && argv[i+1][0] != '-')
-         {
-            if (sscanf(argv[i + 1], "%u", &state->demoInterval) == 1)
-            {
-               // TODO : What limits do we need for timeout?
-               if (state->demoInterval == 0)
-                  state->demoInterval = 250; // ms
-
-               state->demoMode = 1;
-               i++;
-            }
-            else
-               valid = 0;
-         }
-         else
-         {
-            state->demoMode = 1;
-         }
-
-         break;
-      }
-
-      case CommandFramerate: // fps to record
-      {
-         if (sscanf(argv[i + 1], "%u", &state->framerate) == 1)
-         {
-            // TODO : What limits do we need for fps 1 - 30 - 120??
-            i++;
-         }
-         else
-            valid = 0;
-         break;
-      }
-
-      case CommandPreviewEnc:
-         state->immutableInput = 0;
-         break;
-
-      case CommandIntraPeriod: // key frame rate
-      {
-         if (sscanf(argv[i + 1], "%u", &state->intraperiod) == 1)
-            i++;
-         else
-            valid = 0;
-         break;
-      }
-
-      case CommandQP: // quantisation parameter
-      {
-         if (sscanf(argv[i + 1], "%u", &state->quantisationParameter) == 1)
-            i++;
-         else
-            valid = 0;
-         break;
-      }
-
-      case CommandProfile: // H264 profile
-      {
-         state->profile = raspicli_map_xref(argv[i + 1], profile_map, profile_map_size);
-
-         if( state->profile == -1)
-            state->profile = MMAL_VIDEO_PROFILE_H264_HIGH;
-
-         i++;
-         break;
-      }
-
-      case CommandInlineHeaders: // H264 inline headers
-      {
-         state->bInlineHeaders = 1;
-         break;
-      }
-
-      case CommandTimed:
-      {
-         if (sscanf(argv[i + 1], "%u,%u", &state->onTime, &state->offTime) == 2)
-         {
-            i++;
-
-            if (state->onTime < 1000)
-               state->onTime = 1000;
-
-            if (state->offTime < 1000)
-               state->offTime = 1000;
-
-            state->waitMethod = WAIT_METHOD_TIMED;
-
-            if (state->timeout == -1)
-               state->timeout = 0;
-         }
-         else
-            valid = 0;
-         break;
-      }
-
-      case CommandKeypress:
-         state->waitMethod = WAIT_METHOD_KEYPRESS;
-
-         if (state->timeout == -1)
-            state->timeout = 0;
-
-         break;
-
-      case CommandSignal:
-         state->waitMethod = WAIT_METHOD_SIGNAL;
-         // Reenable the signal
-         signal(SIGUSR1, default_signal_handler);
-
-         if (state->timeout == -1)
-            state->timeout = 0;
-
-         break;
-
-      case CommandInitialState:
-      {
-         state->bCapturing = raspicli_map_xref(argv[i + 1], initial_map, initial_map_size);
-
-         if( state->bCapturing == -1)
-            state->bCapturing = 0;
-
-         i++;
-         break;
-      }
-
-      case CommandSegmentFile: // Segment file in to chunks of specified time
-      {
-         if (sscanf(argv[i + 1], "%u", &state->segmentSize) == 1)
-         {
-            // Must enable inline headers for this to work
-            state->bInlineHeaders = 1;
-            i++;
-         }
-         else
-            valid = 0;
-         break;
-      }
-
-      case CommandSegmentWrap: // segment wrap value
-      {
-         if (sscanf(argv[i + 1], "%u", &state->segmentWrap) == 1)
-            i++;
-         else
-            valid = 0;
-         break;
-      }
-
-      case CommandSegmentStart: // initial segment number
-      {
-         if((sscanf(argv[i + 1], "%u", &state->segmentNumber) == 1) && (!state->segmentWrap || (state->segmentNumber <= state->segmentWrap)))
-            i++;
-         else
-            valid = 0;
-         break;
-      }
-
-      case CommandSplitWait: // split files on restart
-      {
-         // Must enable inline headers for this to work
-         state->bInlineHeaders = 1;
-         state->splitWait = 1;
-         break;
-      }
-
-      case CommandCircular:
-      {
-         state->bCircularBuffer = 1;
-         break;
-      }
-
-      case CommandIMV:  // output filename
-      {
-         state->inlineMotionVectors = 1;
-         int len = strlen(argv[i + 1]);
-         if (len)
-         {
-            state->imv_filename = (char*)malloc(len + 1);
-            vcos_assert(state->imv_filename);
-            if (state->imv_filename)
-               strncpy(state->imv_filename, argv[i + 1], len+1);
-            i++;
-         }
-         else
-            valid = 0;
-         break;
-      }
-
-      case CommandIntraRefreshType:
-      {
-         state->intra_refresh_type = raspicli_map_xref(argv[i + 1], intra_refresh_map, intra_refresh_map_size);
-         i++;
-         break;
-      }
-
-      case CommandFlush:
-      {
-         //state->callback_data.flush_buffers = 1;
-         break;
-      }
-      case CommandSavePTS:  // output filename
-      {
-         state->save_pts = 1;
-         int len = strlen(argv[i + 1]);
-         if (len)
-         {
-            state->pts_filename = (char*)malloc(len + 1);
-            vcos_assert(state->pts_filename);
-            if (state->pts_filename)
-               strncpy(state->pts_filename, argv[i + 1], len+1);
-            i++;
-         }
-         else
-            valid = 0;
-         break;
-      }
-      case CommandCodec:  // codec type
-      {
-         int len = strlen(argv[i + 1]);
-         if (len)
-         {
-            if (len==4 && !strncmp("H264", argv[i+1], 4))
-               state->encoding = MMAL_ENCODING_H264;
-            else  if (len==5 && !strncmp("MJPEG", argv[i+1], 5))
-               state->encoding = MMAL_ENCODING_MJPEG;
-            else
-               valid = 0;
-            i++;
-         }
-         else
-            valid = 0;
-         break;
-      }
-
-      case CommandLevel: // H264 level
-      {
-         state->level = raspicli_map_xref(argv[i + 1], level_map, level_map_size);
-
-         if( state->level == -1)
-            state->level = MMAL_VIDEO_LEVEL_H264_4;
-
-         i++;
-         break;
-      }
-
-      case CommandRaw:  // output filename
-      {
-         state->raw_output = true;
-         //state->raw_output_fmt defaults to 0 / yuv
-         int len = strlen(argv[i + 1]);
-         if (len)
-         {
-            state->raw_filename = (char*)malloc(len + 1);
-            vcos_assert(state->raw_filename);
-            if (state->raw_filename)
-               strncpy(state->raw_filename, argv[i + 1], len+1);
-            i++;
-         }
-         else
-            valid = 0;
-         break;
-      }
-
-      case CommandRawFormat:
-      {
-         state->raw_output_fmt = (RAW_OUTPUT_FMT)raspicli_map_xref(argv[i + 1], raw_output_fmt_map, raw_output_fmt_map_size);
-
-         if (state->raw_output_fmt == -1)
-            valid = 0;
-
-         i++;
-         break;
-      }
-
-      case CommandNetListen:
-      {
-         state->netListen = true;
-
-         break;
-      }
-      case CommandSlices:
-      {
-         if ((sscanf(argv[i + 1], "%d", &state->slices) == 1) && (state->slices > 0))
-            i++;
-         else
-            valid = 0;
-         break;
-      }
-
-      case CommandSPSTimings:
-      {
-         state->addSPSTiming = MMAL_TRUE;
-
-         break;
-      }
-
-      default:
-      {
-         // Try parsing for any image specific parameters
-         // result indicates how many parameters were used up, 0,1,2
-         // but we adjust by -1 as we have used one already
-         const char *second_arg = (i + 1 < argc) ? argv[i + 1] : NULL;
-         int parms_used = (raspicamcontrol_parse_cmdline(&state->camera_parameters, &argv[i][1], second_arg));
-
-         // Still unused, try common settings
-         if (!parms_used)
-            parms_used = raspicommonsettings_parse_cmdline(&state->common_settings, &argv[i][1], second_arg, (void (*)())&application_help_message);
-
-         // Still unused, try preview options
-         if (!parms_used)
-            parms_used = raspipreview_parse_cmdline(&state->preview_parameters, &argv[i][1], second_arg);
-
-         // If no parms were used, this must be a bad parameter
-         if (!parms_used)
-            valid = 0;
-         else
-            i += parms_used - 1;
-
-         break;
-      }
-      }
-   }
-
-   if (!valid)
-   {
-      fprintf(stderr, "Invalid command line option (%s)\n", argv[i-1]);
-      return 1;
-   }
-
-   return 0;
-}
-
-/**
- * Update any annotation data specific to the video.
- * This simply passes on the setting from cli, or
- * if application defined annotate requested, updates
- * with the H264 parameters
- *
- * @param state Pointer to state control struct
- *
- */
-static void update_annotation_data(RASPIVID_STATE *state)
-{
-   // So, if we have asked for a application supplied string, set it to the H264 or GPS parameters
-   if (state->camera_parameters.enable_annotate & ANNOTATE_APP_TEXT)
-   {
-      char *text;
-
-      if (state->common_settings.gps)
-      {
-         //text = raspi_gps_location_string();
-      }
-      else
-      {
-         const char *refresh = raspicli_unmap_xref(state->intra_refresh_type, intra_refresh_map, intra_refresh_map_size);
-
-         asprintf(&text,  "%dk,%df,%s,%d,%s,%s",
-                  state->bitrate / 1000,  state->framerate,
-                  refresh ? refresh : "(none)",
-                  state->intraperiod,
-                  raspicli_unmap_xref(state->profile, profile_map, profile_map_size),
-                  raspicli_unmap_xref(state->level, level_map, level_map_size));
-      }
-
-      raspicamcontrol_set_annotate(state->camera_component, state->camera_parameters.enable_annotate, text,
-                                   state->camera_parameters.annotate_text_size,
-                                   state->camera_parameters.annotate_text_colour,
-                                   state->camera_parameters.annotate_bg_colour,
-                                   state->camera_parameters.annotate_justify,
-                                   state->camera_parameters.annotate_x,
-                                   state->camera_parameters.annotate_y
-                                  );
-
-      free(text);
-   }
-   else
-   {
-      raspicamcontrol_set_annotate(state->camera_component, state->camera_parameters.enable_annotate, state->camera_parameters.annotate_string,
-                                   state->camera_parameters.annotate_text_size,
-                                   state->camera_parameters.annotate_text_colour,
-                                   state->camera_parameters.annotate_bg_colour,
-                                   state->camera_parameters.annotate_justify,
-                                   state->camera_parameters.annotate_x,
-                                   state->camera_parameters.annotate_y
-                                  );
-   }
-}
 
 /**
  *  buffer header callback function for encoder
@@ -1349,10 +760,6 @@ static void encoder_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf
    {
       int bytes_written = buffer->length;
       int64_t current_time = get_microseconds64()/1000;
-
-//      vcos_assert(pData->file_handle);
-      // if(pData->pstate->inlineMotionVectors)
-      //    vcos_assert(pData->imv_file_handle);
 
       if (buffer->length)
       {
@@ -1408,139 +815,6 @@ static void encoder_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf
          pData->id = 0;
       }
 
-//       if (pData->cb_buff)
-//       {
-//          int space_in_buff = pData->cb_len - pData->cb_wptr;
-//          int copy_to_end = space_in_buff > buffer->length ? buffer->length : space_in_buff;
-//          int copy_to_start = buffer->length - copy_to_end;
-
-//          if(buffer->flags & MMAL_BUFFER_HEADER_FLAG_CONFIG)
-//          {
-//             if(pData->header_wptr + buffer->length > sizeof(pData->header_bytes))
-//             {
-//                vcos_log_error("Error in header bytes\n");
-//             }
-//             else
-//             {
-//                // These are the header bytes, save them for final output
-//                mmal_buffer_header_mem_lock(buffer);
-//                memcpy(pData->header_bytes + pData->header_wptr, buffer->data, buffer->length);
-//                mmal_buffer_header_mem_unlock(buffer);
-//                pData->header_wptr += buffer->length;
-//             }
-//          }
-//          else if((buffer->flags & MMAL_BUFFER_HEADER_FLAG_CODECSIDEINFO))
-//          {
-//             // Do something with the inline motion vectors...
-//          }
-//          else
-//          {
-//             static int frame_start = -1;
-//             int i;
-
-//             if(frame_start == -1)
-//                frame_start = pData->cb_wptr;
-
-//             if(buffer->flags & MMAL_BUFFER_HEADER_FLAG_KEYFRAME)
-//             {
-//                pData->iframe_buff[pData->iframe_buff_wpos] = frame_start;
-//                pData->iframe_buff_wpos = (pData->iframe_buff_wpos + 1) % IFRAME_BUFSIZE;
-//             }
-
-//             if(buffer->flags & MMAL_BUFFER_HEADER_FLAG_FRAME_END)
-//                frame_start = -1;
-
-//             // If we overtake the iframe rptr then move the rptr along
-//             if((pData->iframe_buff_rpos + 1) % IFRAME_BUFSIZE != pData->iframe_buff_wpos)
-//             {
-//                while(
-//                   (
-//                      pData->cb_wptr <= pData->iframe_buff[pData->iframe_buff_rpos] &&
-//                      (pData->cb_wptr + buffer->length) > pData->iframe_buff[pData->iframe_buff_rpos]
-//                   ) ||
-//                   (
-//                      (pData->cb_wptr > pData->iframe_buff[pData->iframe_buff_rpos]) &&
-//                      (pData->cb_wptr + buffer->length) > (pData->iframe_buff[pData->iframe_buff_rpos] + pData->cb_len)
-//                   )
-//                )
-//                   pData->iframe_buff_rpos = (pData->iframe_buff_rpos + 1) % IFRAME_BUFSIZE;
-//             }
-
-//             mmal_buffer_header_mem_lock(buffer);
-//             // We are pushing data into a circular buffer
-//             memcpy(pData->cb_buff + pData->cb_wptr, buffer->data, copy_to_end);
-//             memcpy(pData->cb_buff, buffer->data + copy_to_end, copy_to_start);
-//             mmal_buffer_header_mem_unlock(buffer);
-
-//             if((pData->cb_wptr + buffer->length) > pData->cb_len)
-//                pData->cb_wrap = 1;
-
-//             pData->cb_wptr = (pData->cb_wptr + buffer->length) % pData->cb_len;
-
-//             for(i = pData->iframe_buff_rpos; i != pData->iframe_buff_wpos; i = (i + 1) % IFRAME_BUFSIZE)
-//             {
-//                int p = pData->iframe_buff[i];
-//                if(pData->cb_buff[p] != 0 || pData->cb_buff[p+1] != 0 || pData->cb_buff[p+2] != 0 || pData->cb_buff[p+3] != 1)
-//                {
-//                   vcos_log_error("Error in iframe list\n");
-//                }
-//             }
-//          }
-//       }
-//       else
-//       {
-//          // For segmented record mode, we need to see if we have exceeded our time/size,
-//          // but also since we have inline headers turned on we need to break when we get one to
-//          // ensure that the new stream has the header in it. If we break on an I-frame, the
-//          // SPS/PPS header is actually in the previous chunk.
-//          if ((buffer->flags & MMAL_BUFFER_HEADER_FLAG_CONFIG) &&
-//                ((pData->pstate->segmentSize && current_time > base_time + pData->pstate->segmentSize) ||
-//                 (pData->pstate->splitWait && pData->pstate->splitNow)))
-//          {
-// //            FILE *new_handle;
-
-//             base_time = current_time;
-
-//             pData->pstate->splitNow = 0;
-//             pData->pstate->segmentNumber++;
-
-//             // Only wrap if we have a wrap point set
-//             if (pData->pstate->segmentWrap && pData->pstate->segmentNumber > pData->pstate->segmentWrap)
-//                pData->pstate->segmentNumber = 1;
-
-//             // if (pData->pstate->common_settings.filename && pData->pstate->common_settings.filename[0] != '-')
-//             // {
-//             //    new_handle = open_filename(pData->pstate, pData->pstate->common_settings.filename);
-
-//             //    if (new_handle)
-//             //    {
-//             //       fclose(pData->file_handle);
-//             //       pData->file_handle = new_handle;
-//             //    }
-//             // }
-
-//             // if (pData->pstate->imv_filename && pData->pstate->imv_filename[0] != '-')
-//             // {
-//             //    new_handle = open_filename(pData->pstate, pData->pstate->imv_filename);
-
-//             //    if (new_handle)
-//             //    {
-//             //       fclose(pData->imv_file_handle);
-//             //       pData->imv_file_handle = new_handle;
-//             //    }
-//             // }
-
-//             // if (pData->pstate->pts_filename && pData->pstate->pts_filename[0] != '-')
-//             // {
-//             //    new_handle = open_filename(pData->pstate, pData->pstate->pts_filename);
-
-//             //    if (new_handle)
-//             //    {
-//             //       fclose(pData->pts_file_handle);
-//             //       pData->pts_file_handle = new_handle;
-//             //    }
-//             // }
-//          }
 //          if (buffer->length)
 //          {
 //             mmal_buffer_header_mem_lock(buffer);
@@ -1580,23 +854,6 @@ static void encoder_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf
 //             //       pData->pstate->frame++;
 //             //    }
 //             // }
-
-//             mmal_buffer_header_mem_unlock(buffer);
-
-//             // if (bytes_written != buffer->length)
-//             // {
-//             //    vcos_log_error("Failed to write buffer data (%d from %d)- aborting", bytes_written, buffer->length);
-//             //    pData->abort = 1;
-//             // }
-//          }
-//       }
-
-//       // See if the second count has changed and we need to update any annotation
-//       if (current_time/1000 != last_second)
-//       {
-//          update_annotation_data(pData->pstate);
-//          last_second = current_time/1000;
-//       }
    }
    else
    {
@@ -1718,7 +975,6 @@ static void splitter_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *bu
 
       if (!new_buffer || status != MMAL_SUCCESS)
       {
-         vcos_log_error("Unable to return a buffer to the splitter port");
          RCLCPP_ERROR(state.pNode->get_logger(), "Unable to return a buffer to the splitter port");
       }
    }
@@ -1744,7 +1000,6 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
 
    if (status != MMAL_SUCCESS)
    {
-      vcos_log_error("Failed to create camera component");
       RCLCPP_ERROR(state->pNode->get_logger(), "Failed to create camera component");
       goto error;
    }
@@ -1771,7 +1026,6 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
 
       if (status != MMAL_SUCCESS)
       {
-         vcos_log_error("Could not select camera : error %d", status);
          RCLCPP_ERROR(state->pNode->get_logger(), "Could not select camera : error %d", status);
          goto error;
       }
@@ -1780,7 +1034,6 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
    if (!camera->output_num)
    {
       status = MMAL_ENOSYS;
-      vcos_log_error("Camera doesn't have output ports");
       RCLCPP_ERROR(state->pNode->get_logger(), "Camera doesn't have output ports");
       goto error;
    }
@@ -1877,7 +1130,6 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
 
    if (status != MMAL_SUCCESS)
    {
-      vcos_log_error("camera viewfinder format couldn't be set");
       RCLCPP_ERROR(state->pNode->get_logger(), "camera preview format couldn't be set");
       goto error;
    }
@@ -1917,7 +1169,6 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
 
    if (status != MMAL_SUCCESS)
    {
-      vcos_log_error("camera video format couldn't be set");
       RCLCPP_ERROR(state->pNode->get_logger(), "camera video format couldn't be set");
       goto error;
    }
@@ -1947,7 +1198,6 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
 
    if (status != MMAL_SUCCESS)
    {
-      vcos_log_error("camera still format couldn't be set");
       RCLCPP_ERROR(state->pNode->get_logger(), "camera still format couldn't be set");
       goto error;
    }
@@ -1961,7 +1211,6 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
 
    if (status != MMAL_SUCCESS)
    {
-      vcos_log_error("camera component couldn't be enabled");
       RCLCPP_ERROR(state->pNode->get_logger(), "camera component couldn't be enabled");
       goto error;
    }
@@ -1970,8 +1219,6 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
    raspicamcontrol_set_all_parameters(camera, &state->camera_parameters);
 
    state->camera_component = camera;
-
-   update_annotation_data(state);
 
    if (state->common_settings.verbose)
       fprintf(stderr, "Camera component done\n");
@@ -3032,9 +2279,6 @@ error:
 
    if (status != MMAL_SUCCESS)
       raspicamcontrol_check_configuration(128);
-
-  //  if (state.common_settings.gps)
-  //     raspi_gps_shutdown(state.common_settings.verbose);
 
    return exit_code;
 }

@@ -75,10 +75,11 @@ typedef enum
 struct RASPIVID_STATE {
   RASPIVID_STATE()
     :
+    showPreview (false)
      //camera_component(nullptr),
      //preview_component(nullptr)
     //, splitter_component(nullptr)
-    image_encoder_component(nullptr)
+    , image_encoder_component(nullptr)
     , video_encoder_component(nullptr)
     //, splitter_connection(nullptr)
     , image_encoder_connection(nullptr)
@@ -92,6 +93,7 @@ struct RASPIVID_STATE {
   
 //   RASPICOMMONSETTINGS_PARAMETERS common_settings;     /// Common settings
   bool isInit;
+  bool showPreview;
   //int width;      /// Requested width of image
   //int height;     /// requested height of image
   //int framerate;  /// Requested frame rate (fps)
@@ -123,7 +125,6 @@ struct RASPIVID_STATE {
 // struct RASPIVID_STATE_S
 // {
    RASPICOMMONSETTINGS_PARAMETERS common_settings;     /// Common settings
-   int timeout;                        /// Time taken before frame is grabbed and app then shuts down. Units are milliseconds
    MMAL_FOURCC_T encoding;             /// Requested codec video encoding (MJPEG or H264)
    int bitrate;                        /// Requested bitrate
    int framerate;                      /// Requested frame rate (fps)
@@ -134,8 +135,6 @@ struct RASPIVID_STATE {
    /// the camera output or the encoder output (with compression artifacts)
    int profile;                        /// H264 profile to use for encoding
    int level;                          /// H264 level to use for encoding
-   int waitMethod;                     /// Method for switching between pause and capture
-
    int onTime;                         /// In timed cycle mode, the amount of time the capture is on per cycle
    int offTime;                        /// In timed cycle mode, the amount of time the capture is off per cycle
 

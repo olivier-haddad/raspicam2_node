@@ -577,21 +577,6 @@ static XREF_T  raw_output_fmt_map[] =
 
 static int raw_output_fmt_map_size = sizeof(raw_output_fmt_map) / sizeof(raw_output_fmt_map[0]);
 
-static struct
-{
-   char *description;
-   int nextWaitMethod;
-} wait_method_description[] =
-{
-   {"Simple capture",         WAIT_METHOD_NONE},
-   {"Capture forever",        WAIT_METHOD_FOREVER},
-   {"Cycle on time",          WAIT_METHOD_TIMED},
-   {"Cycle on keypress",      WAIT_METHOD_KEYPRESS},
-   {"Cycle on signal",        WAIT_METHOD_SIGNAL},
-};
-
-static int wait_method_description_size = sizeof(wait_method_description) / sizeof(wait_method_description[0]);
-
 /**
  * Assign a default set of parameters to the state passed in
  *
@@ -609,9 +594,9 @@ void default_status(RASPIVID_STATE *state)
    memset(state, 0, sizeof(RASPIVID_STATE));
 
    state->isInit=false;
+   state->showPreview = false;
 
    // Now set anything non-zero
-   state->timeout = -1; // replaced with 5000ms later if unset
    state->common_settings.width = 1920;       // Default to 1080p
    state->common_settings.height = 1080;
    state->encoding = MMAL_ENCODING_H264;
@@ -622,7 +607,6 @@ void default_status(RASPIVID_STATE *state)
    state->immutableInput = 1;
    state->profile = MMAL_VIDEO_PROFILE_H264_HIGH;
    state->level = MMAL_VIDEO_LEVEL_H264_4;
-   state->waitMethod = WAIT_METHOD_NONE;
    state->onTime = 5000;
    state->offTime = 5000;
    state->bCapturing = 0;
@@ -696,7 +680,7 @@ static void dump_status(RASPIVID_STATE *state)
 
    raspicommonsettings_dump_parameters(&state->common_settings);
 
-   fprintf(stderr, "bitrate %d, framerate %d, time delay %d\n", state->bitrate, state->framerate, state->timeout);
+   fprintf(stderr, "bitrate %d, framerate %d\n", state->bitrate, state->framerate);
    fprintf(stderr, "H264 Profile %s\n", raspicli_unmap_xref(state->profile, profile_map, profile_map_size));
    fprintf(stderr, "H264 Level %s\n", raspicli_unmap_xref(state->level, level_map, level_map_size));
    fprintf(stderr, "H264 Quantisation level %d, Inline headers %s\n", state->quantisationParameter, state->bInlineHeaders ? "Yes" : "No");
@@ -707,12 +691,6 @@ static void dump_status(RASPIVID_STATE *state)
    if (state->raw_output)
       fprintf(stderr, "Raw output enabled, format %s\n", raspicli_unmap_xref(state->raw_output_fmt, raw_output_fmt_map, raw_output_fmt_map_size));
 
-   fprintf(stderr, "Wait method : ");
-   for (i=0; i<wait_method_description_size; i++)
-   {
-      if (state->waitMethod == wait_method_description[i].nextWaitMethod)
-         fprintf(stderr, "%s", wait_method_description[i].description);
-   }
    fprintf(stderr, "\nInitial state '%s'\n", raspicli_unmap_xref(state->bCapturing, initial_map, initial_map_size));
    fprintf(stderr, "\n\n");
 
@@ -1920,23 +1898,14 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
    //already called in RasPiCamPublisher
    //default_status(&state);q
 
-   if (state.timeout == -1)
-      state.timeout = 10000;
-
    // Setup for sensor specific parameters, only set W/H settings if zero on entry
    get_sensor_defaults(state.common_settings.cameraNum, state.common_settings.camera_name,
                        &state.common_settings.width, &state.common_settings.height);
 
    if (state.common_settings.verbose)
-   {
-      //print_app_details(stderr);
       dump_status(&state);
-   }
 
    check_camera_model(state.common_settings.cameraNum);
-   if (state.common_settings.gps)
-//      if (raspi_gps_setup(state.common_settings.verbose))
-         state.common_settings.gps = 0;
 
    // OK, we have a nice set of parameters. Now set up our components
    // We have three components. Camera, Preview and encoder.

@@ -45,11 +45,12 @@ RasPiCamPublisher::RasPiCamPublisher(rclcpp::NodeOptions options)
 
     //declare all parameters
     declare_parameter("camera_id", 0);
+    declare_parameter("image_transport");
+    declare_parameter("show_preview", false);
     declare_parameter("width", state->common_settings.width);
     declare_parameter("height", state->common_settings.height);
     declare_parameter("fps");
     declare_parameter("quality");
-    declare_parameter("image_transport");
     declare_parameter("enable_imv");
     declare_parameter("sharpness");
     declare_parameter("contrast");
@@ -80,6 +81,8 @@ RasPiCamPublisher::RasPiCamPublisher(rclcpp::NodeOptions options)
     declare_parameter("digital_gain");
 
     // get parameters
+    state->preview_parameters.wantPreview = get_parameter("show_preview").as_bool() ? 1 : 0;
+
     state->common_settings.width = get_parameter("width").as_int();
     state->common_settings.height = get_parameter("height").as_int();
     get_parameter_or("fps", state->framerate, state->framerate);

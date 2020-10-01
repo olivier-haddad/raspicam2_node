@@ -45,7 +45,8 @@ RasPiCamPublisher::RasPiCamPublisher(rclcpp::NodeOptions options)
 
     //declare all parameters
     declare_parameter("camera_id", 0);
-    declare_parameter("image_transport");
+    declare_parameter("enable_raw_pub");
+    declare_parameter("enable_compressed_pub", false);
     declare_parameter("show_preview", false);
     declare_parameter("width", state->common_settings.width);
     declare_parameter("height", state->common_settings.height);
@@ -81,34 +82,26 @@ RasPiCamPublisher::RasPiCamPublisher(rclcpp::NodeOptions options)
     declare_parameter("digital_gain");
 
     // get parameters
+    get_parameter_or("camera_id", state->common_settings.cameraNum, 0);
+    RCLCPP_INFO(get_logger(), "Camera number %d.", state->common_settings.cameraNum);
+
     state->preview_parameters.wantPreview = get_parameter("show_preview").as_bool() ? 1 : 0;
+    RCLCPP_INFO(get_logger(), "Preview %senabled.", state->preview_parameters.wantPreview ? "" : "NOT ");
+
+    state->enable_raw_pub = get_parameter("enable_raw_pub").as_bool();
+    state->enable_compressed_pub = get_parameter("enable_compressed_pub").as_bool();
+    if(!state->enable_raw_pub && !state->enable_compressed_pub)
+    {
+        RCLCPP_FATAL(get_logger(), "No output was enabled in configuration.");
+        rclcpp::shutdown();
+    }
+
+    get_parameter_or("enable_imv", state->enable_imv_pub, false);
 
     state->common_settings.width = get_parameter("width").as_int();
     state->common_settings.height = get_parameter("height").as_int();
     get_parameter_or("fps", state->framerate, state->framerate);
     get_parameter_or("quality", state->quality, state->quality);
-
-    get_parameter_or("camera_id", state->common_settings.cameraNum, 0);
-    RCLCPP_INFO(get_logger(), "Camera number %d.", state->common_settings.cameraNum);
-
-    std::string image_transport;
-    get_parameter_or<std::string>("image_transport", image_transport, "raw");
-    state->raw_output = (image_transport=="raw");
-    get_parameter_or("enable_imv", state->enable_imv_pub, false);
-
-    buffer_callback_t cb_raw = nullptr;
-    pub_img = nullptr;
-    if(state->raw_output) {
-        pub_img = create_publisher<sensor_msgs::msg::Image>("image", rclcpp::QoS(1));
-        cb_raw = std::bind(&RasPiCamPublisher::onImageRaw, this, std::placeholders::_1, std::placeholders::_2);
-        RCLCPP_INFO(get_logger(), "Raw enabled.");
-    }
-
-    buffer_callback_t cb_motion = nullptr;
-    if(state->enable_imv_pub) {
-        cb_motion = std::bind(&RasPiCamPublisher::onMotion, this, std::placeholders::_1, std::placeholders::_2);
-        RCLCPP_INFO(get_logger(), "Motion vectors enabled.");
-    }
 
     get_parameter_or("sharpness" , state->camera_parameters.sharpness , state->camera_parameters.sharpness );
     get_parameter_or("contrast"  , state->camera_parameters.contrast  , state->camera_parameters.contrast  );
@@ -175,19 +168,36 @@ RasPiCamPublisher::RasPiCamPublisher(rclcpp::NodeOptions options)
     // get_parameter_or("analog_gain", state->camera_parameters.awb_gains_r, 0.0f);
     // get_parameter_or("digital_gain", state->camera_parameters.awb_gains_b, 0.0f);
 
-    pub_img_compressed = create_publisher<sensor_msgs::msg::CompressedImage>("image/compressed", rclcpp::QoS(1));
+    buffer_callback_t cb_raw = nullptr;
+    pub_img = nullptr;
+    if(state->enable_raw_pub) {
+        pub_img = create_publisher<sensor_msgs::msg::Image>("image", rclcpp::QoS(1));
+        cb_raw = std::bind(&RasPiCamPublisher::onImageRaw, this, std::placeholders::_1, std::placeholders::_2);
+        RCLCPP_INFO(get_logger(), "Raw enabled.");
+    }
+
+    buffer_callback_t cb_compressed = nullptr;
+    pub_img_compressed = nullptr;
+    if(state->enable_compressed_pub)
+    {
+        pub_img_compressed = create_publisher<sensor_msgs::msg::CompressedImage>("image/compressed", rclcpp::QoS(1));
+        cb_compressed = std::bind(&RasPiCamPublisher::onImageCompressed, this, std::placeholders::_1, std::placeholders::_2);
+        RCLCPP_INFO(get_logger(), "Compressed enabled.");
+    }
+
+    buffer_callback_t cb_motion = nullptr;
+    if(state->enable_imv_pub) {
+        cb_motion = std::bind(&RasPiCamPublisher::onMotion, this, std::placeholders::_1, std::placeholders::_2);
+        RCLCPP_INFO(get_logger(), "Motion vectors enabled.");
+    }
+
     pub_info = create_publisher<sensor_msgs::msg::CameraInfo>("image/camera_info", rclcpp::QoS(1));
-    srv_info = create_service<sensor_msgs::srv::SetCameraInfo>("set_camera_info",
-        std::bind(&RasPiCamPublisher::set_camera_info, this,
-        std::placeholders::_1, std::placeholders::_2));
+    srv_info = create_service<sensor_msgs::srv::SetCameraInfo>("set_camera_info", std::bind(&RasPiCamPublisher::set_camera_info, this, std::placeholders::_1, std::placeholders::_2));
 
     state->common_settings.verbose = 1;
-    init_cam(*state,
-             cb_raw,
-             std::bind(&RasPiCamPublisher::onImageCompressed, this, std::placeholders::_1, std::placeholders::_2),
-             cb_motion);
+    init_cam(*state, cb_raw, cb_compressed, cb_motion);
 
-
+    //TODO read from camera info file
     double sensorWidth, sensorHeight, sensorFocalLength;
     const std::string cameraName(state->common_settings.camera_name);
     // set default camera parameters for Camera Module v2
@@ -242,7 +252,7 @@ void RasPiCamPublisher::onImageRaw(const uint8_t* start, const uint8_t* end)
     msg->height = camera_info.height;
     msg->width = camera_info.width;
     //calculating the step, must be for video capture a multiple of 16 (32 for stills)
-    uint32_t rounded_width = (uint32_t)(ceil(msg->width/16.0) * 16);//aligned to 16
+    uint32_t rounded_width = (uint32_t)VCOS_ALIGN_UP(state->common_settings.width, 16);
     msg->step = rounded_width * 3;
     msg->encoding = "rgb8";
     msg->data.insert(msg->data.end(), start, end);

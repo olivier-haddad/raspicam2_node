@@ -98,7 +98,8 @@ struct RASPIVID_STATE {
   //int height;     /// requested height of image
   //int framerate;  /// Requested frame rate (fps)
   int quality;
-  //bool enable_raw_pub;  // Enable Raw publishing
+  bool enable_raw_pub;  // Enable Raw publishing
+  bool enable_compressed_pub;  // Enable Compressed publishing
   bool enable_imv_pub;  // Enable publishing of inline motion vectors
 
   //int camera_id = 0;
@@ -143,13 +144,13 @@ struct RASPIVID_STATE {
 
    MMAL_COMPONENT_T *camera_component;    /// Pointer to the camera component
    MMAL_COMPONENT_T *splitter_component;  /// Pointer to the splitter component
-   MMAL_COMPONENT_T *encoder_component;   /// Pointer to the encoder component
+   //MMAL_COMPONENT_T *encoder_component;   /// Pointer to the encoder component
    MMAL_CONNECTION_T *preview_connection; /// Pointer to the connection from camera or splitter to preview
    MMAL_CONNECTION_T *splitter_connection;/// Pointer to the connection from camera to splitter
    MMAL_CONNECTION_T *encoder_connection; /// Pointer to the connection from camera to encoder
 
    MMAL_POOL_T *splitter_pool; /// Pointer to the pool of buffers used by splitter output port 0
-   MMAL_POOL_T *encoder_pool; /// Pointer to the pool of buffers used by encoder output port
+   //MMAL_POOL_T *encoder_pool; /// Pointer to the pool of buffers used by encoder output port
 
    //PORT_USERDATA callback_data;        /// Used to move data to the encoder callback
 
@@ -159,7 +160,6 @@ struct RASPIVID_STATE {
 
    int inlineMotionVectors;             /// Encoder outputs inline Motion Vectors
    char *imv_filename;                  /// filename of inline Motion Vectors output
-   bool raw_output;                      /// Output raw video from camera as well
    RAW_OUTPUT_FMT raw_output_fmt;       /// The raw video format
    char *raw_filename;                  /// Filename for raw video output
    int intra_refresh_type;              /// What intra refresh type to use. -1 to not set.

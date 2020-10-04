@@ -1469,13 +1469,13 @@ int close_cam(RASPIVID_STATE& state)
    state.isInit = false;
 
    MMAL_PORT_T *camera_still_port = state.camera_component->output[MMAL_CAMERA_CAPTURE_PORT];;
-   MMAL_PORT_T *encoder_output_port = state.image_encoder_component->output[0];
+   MMAL_PORT_T *image_encoder_output_port = state.image_encoder_component->output[0];
 //   MMAL_PORT_T *splitter_output_port = state.splitter_component->output[SPLITTER_OUTPUT_PORT];
    MMAL_PORT_T *splitter_output_port = state.splitter_component->output[1];
 
    // Disable all our ports that are not handled by connections
    check_disable_port(camera_still_port);
-   check_disable_port(encoder_output_port);
+   check_disable_port(image_encoder_output_port);
    check_disable_port(splitter_output_port);
 
    if (state.preview_parameters.wantPreview && state.preview_connection)
@@ -1536,8 +1536,6 @@ int start_capture(RASPIVID_STATE& state)
     RCLCPP_FATAL(state.pNode->get_logger(), "Tried to start capture before camera is initialized");
   
   MMAL_PORT_T* camera_video_port = state.camera_component->output[mmal::camera_port::video];
-  //video_encoder_output_port
-  MMAL_PORT_T* image_encoder_output_port = state.image_encoder_component->output[0];
 //  MMAL_PORT_T* splitter_output_raw = state.splitter_component->output[SPLITTER_OUTPUT_PORT];
   MMAL_PORT_T* splitter_output_raw_port = state.splitter_component->output[1];
   RCLCPP_INFO(state.pNode->get_logger(), "Starting video capture (%d, %d, %d, %d)", state.common_settings.width, state.common_settings.height, state.quality, state.framerate);
@@ -1565,24 +1563,25 @@ int start_capture(RASPIVID_STATE& state)
   //if (state.enable_imv_pub)
   if(state.enable_compressed_pub)
   {
-    int num = mmal_queue_length(state.image_encoder_pool->queue);
-    int q;
-    for (q = 0; q < num; q++) 
-    {
-      MMAL_BUFFER_HEADER_T* buffer = mmal_queue_get(state.image_encoder_pool->queue);
-
-      if (!buffer)
+      MMAL_PORT_T* image_encoder_output_port = state.image_encoder_component->output[0];
+      int num = mmal_queue_length(state.image_encoder_pool->queue);
+      int q;
+      for (q = 0; q < num; q++) 
       {
-        vcos_log_error("Unable to get a required buffer %d from pool queue", q);
-        RCLCPP_ERROR(state.pNode->get_logger(), "Unable to get a required buffer %d from pool queue", q);
-      }
+         MMAL_BUFFER_HEADER_T* buffer = mmal_queue_get(state.image_encoder_pool->queue);
 
-      if (mmal_port_send_buffer(image_encoder_output_port, buffer) != MMAL_SUCCESS) 
-      {
-        vcos_log_error("Unable to send a buffer to video encoder output port (%d)", q);
-        RCLCPP_ERROR(state.pNode->get_logger(), "Unable to send a buffer to video encoder output port (%d)", q);
+         if (!buffer)
+         {
+            vcos_log_error("Unable to get a required buffer %d from pool queue", q);
+            RCLCPP_ERROR(state.pNode->get_logger(), "Unable to get a required buffer %d from pool queue", q);
+         }
+
+         if (mmal_port_send_buffer(image_encoder_output_port, buffer) != MMAL_SUCCESS) 
+         {
+            vcos_log_error("Unable to send a buffer to video encoder output port (%d)", q);
+            RCLCPP_ERROR(state.pNode->get_logger(), "Unable to send a buffer to image encoder output port (%d)", q);
+         }
       }
-    }
   }
 
   // Send all the buffers to the splitter output port
@@ -1631,20 +1630,16 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
 
 //   MMAL_PORT_T* splitter_output_enc = nullptr;
 //   MMAL_PORT_T* splitter_output_raw = nullptr;
-//   MMAL_PORT_T* image_encoder_input_port = nullptr;
-//   MMAL_PORT_T* image_encoder_output_port = nullptr;
+   //for compressed images
+   MMAL_PORT_T* image_encoder_input_port = nullptr;
+   MMAL_PORT_T* image_encoder_output_port = nullptr;
    //for motion vectors
 //   MMAL_PORT_T* video_encoder_input_port = nullptr;
 //   MMAL_PORT_T* video_encoder_output_port = nullptr;
 
-   //for compressed images
-   MMAL_PORT_T *encoder_input_port = nullptr;
-   //for compressed images
-   MMAL_PORT_T *encoder_output_port = nullptr;
    //for raw images
 //   MMAL_PORT_T *splitter_output_port = nullptr;
    MMAL_PORT_T *splitter_preview_port = nullptr;
-
    MMAL_PORT_T *splitter_out_raw_port1 = nullptr;
    MMAL_PORT_T *splitter_out_compressed_port0 = nullptr;
 
@@ -1718,9 +1713,11 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
       camera_video_port   = state.camera_component->output[mmal::camera_port::video];
       camera_still_port   = state.camera_component->output[mmal::camera_port::capture];
       preview_input_port  = state.preview_parameters.preview_component->input[0];
-      encoder_input_port  = state.image_encoder_component->input[0];
-      encoder_output_port = state.image_encoder_component->output[0];
-
+      if(state.enable_compressed_pub)
+      {
+         image_encoder_input_port  = state.image_encoder_component->input[0];
+         image_encoder_output_port = state.image_encoder_component->output[0];
+      }
       // if (state.enable_raw_pub)
       // {
          splitter_input_port = state.splitter_component->input[0];
@@ -1809,8 +1806,8 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
                fprintf(stderr, "Connecting splitter to encoder input port\n");
 
             // Now connect the camera to the encoder
-//            status = connect_ports(camera_video_port, encoder_input_port, &state.encoder_connection);
-            status = connect_ports(splitter_out_compressed_port0, encoder_input_port, &state.encoder_connection);
+//            status = connect_ports(camera_video_port, image_encoder_input_port, &state.encoder_connection);
+            status = connect_ports(splitter_out_compressed_port0, image_encoder_input_port, &state.encoder_connection);
 
             if (status != MMAL_SUCCESS)
             {
@@ -1865,13 +1862,13 @@ int init_cam(RASPIVID_STATE& state, buffer_callback_t cb_raw, buffer_callback_t 
             callback_data_enc->callback = cb_compressed;
 
             // Set up our userdata - this is passed though to the callback where we need the information.
-            encoder_output_port->userdata = callback_data_enc;
+            image_encoder_output_port->userdata = callback_data_enc;
 
             if (state.common_settings.verbose)
                fprintf(stderr, "Enabling encoder output port\n");
 
             // Enable the encoder output port and tell it its callback function
-            status = mmal_port_enable(encoder_output_port, image_encoder_buffer_callback);
+            status = mmal_port_enable(image_encoder_output_port, image_encoder_buffer_callback);
 
             if (status != MMAL_SUCCESS)
             {
